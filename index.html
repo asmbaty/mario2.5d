@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Super Mario Bros 2.5D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="game"></div>
+
+<div id="hud">
+  <div class="col"><div>MARIO</div><div id="hud-score">000000</div></div>
+  <div class="col"><div>&nbsp;</div><div><span class="coin-ico"></span>×<span id="hud-coins">00</span></div></div>
+  <div class="col"><div>WORLD</div><div id="hud-world">1-1</div></div>
+  <div class="col"><div>TIME</div><div id="hud-time">400</div></div>
+  <div class="col"><div>LIVES</div><div id="hud-lives">3</div></div>
+</div>
+
+<div id="title" class="overlay show">
+  <div class="logo">
+    <div class="l1">SUPER</div>
+    <div class="l2">MARIO BROS.</div>
+    <div class="l3">2.5D</div>
+  </div>
+  <div class="select"><button id="sel-prev">◀</button><span id="sel-name">WORLD 1-1 · GRASSLAND</span><button id="sel-next">▶</button></div>
+  <div class="blink" id="press-start">PRESS ENTER OR TAP TO START</div>
+  <div class="controls">
+    <div>← → / A D &nbsp; MOVE</div>
+    <div>SPACE / Z / ↑ &nbsp; JUMP</div>
+    <div>SHIFT / X &nbsp; RUN · FIREBALL</div>
+    <div>← → ON THIS SCREEN: CHOOSE LEVEL</div>
+    <div>P PAUSE &nbsp;·&nbsp; M MUTE</div>
+  </div>
+  <div class="top" id="top-score">TOP - 000000</div>
+</div>
+
+<div id="intro" class="overlay">
+  <div id="intro-world">WORLD 1-1</div>
+  <div id="intro-name"></div>
+  <div id="intro-hint"></div>
+  <div class="lives-row"><span class="mini-mario"></span> × <span id="intro-lives">3</span></div>
+</div>
+
+<div id="msg" class="overlay"><div id="msg-text"></div><div id="msg-sub"></div></div>
+<div id="pause">PAUSED</div>
+<div id="toast"></div>
+
+<div id="touch">
+  <div class="pad">
+    <button data-k="left">◀</button>
+    <button data-k="right">▶</button>
+  </div>
+  <div class="pad">
+    <button data-k="run" class="b">B</button>
+    <button data-k="jump" class="a">A</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/textures.js"></script>
+<script src="js/models.js"></script>
+<script src="js/models2.js"></script>
+<script src="js/decor.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

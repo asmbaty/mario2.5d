@@ -1,0 +1,64 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+body { font-family: 'Press Start 2P', monospace; color: #fff; user-select: none; -webkit-user-select: none; touch-action: none; }
+#game { position: fixed; inset: 0; }
+#game canvas { display: block; width: 100%; height: 100%; }
+
+#hud {
+  position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-around;
+  padding: 14px 16px; font-size: clamp(9px, 1.6vw, 18px); line-height: 1.7;
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000; pointer-events: none; z-index: 5;
+}
+#hud .col { text-align: center; min-width: 4em; }
+.coin-ico { display: inline-block; width: .7em; height: 1em; background: #f8c800; border-radius: 45%; box-shadow: inset -2px 0 0 #b07000; vertical-align: -2px; margin-right: 3px; animation: coinflash 1s infinite; }
+@keyframes coinflash { 50% { background: #fff0a0; } }
+
+.overlay {
+  position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center;
+  gap: 28px; z-index: 10; text-align: center; padding: 16px;
+}
+.overlay.show { display: flex; }
+
+#title { background: radial-gradient(ellipse at center, rgba(0,0,0,.15), rgba(0,0,0,.55)); }
+.logo {
+  background: linear-gradient(#e0662a, #b8400c); border: 4px solid #3a1400; border-radius: 10px;
+  padding: 26px 40px 22px; box-shadow: 0 8px 0 #3a1400, 0 16px 40px rgba(0,0,0,.5);
+  transform: perspective(600px) rotateX(12deg);
+}
+.logo .l1 { font-size: clamp(14px, 3vw, 28px); color: #fff; text-shadow: 3px 3px 0 #3a1400; text-align: left; }
+.logo .l2 { font-size: clamp(22px, 6vw, 58px); color: #fff; text-shadow: 4px 4px 0 #3a1400; margin: 10px 0; }
+.logo .l3 { font-size: clamp(18px, 4.5vw, 44px); color: #ffd23a; text-shadow: 4px 4px 0 #3a1400; text-align: right; }
+.blink { font-size: clamp(10px, 1.8vw, 18px); animation: blink 1s steps(2) infinite; text-shadow: 2px 2px 0 #000; }
+@keyframes blink { 50% { opacity: 0; } }
+.controls { font-size: clamp(8px, 1.2vw, 12px); line-height: 2.2; color: #fff; text-shadow: 2px 2px 0 #000; background: rgba(0,0,0,.35); padding: 12px 20px; border-radius: 8px; }
+.top { font-size: clamp(9px, 1.4vw, 14px); text-shadow: 2px 2px 0 #000; }
+
+#intro { background: #000; font-size: clamp(14px, 2.4vw, 24px); }
+#intro-name { font-size: clamp(9px, 1.4vw, 14px); color: #ffd23a; }
+.lives-row { display: flex; align-items: center; gap: 16px; }
+.mini-mario { width: 28px; height: 36px; background:
+  linear-gradient(#d82800 0 25%, #ffc090 25% 50%, #d82800 50% 70%, #2038ec 70%); border-radius: 4px; display: inline-block; }
+
+#msg { background: rgba(0,0,0,.55); font-size: clamp(16px, 3vw, 32px); text-shadow: 3px 3px 0 #000; }
+#msg-sub { font-size: clamp(9px, 1.4vw, 14px); line-height: 2; }
+
+#pause { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; font-size: 32px; z-index: 11; background: rgba(0,0,0,.4); text-shadow: 3px 3px 0 #000; }
+#pause.show { display: flex; }
+
+#touch { position: fixed; left: 0; right: 0; bottom: 0; display: none; justify-content: space-between; padding: 18px; z-index: 12; pointer-events: none; }
+#touch .pad { display: flex; gap: 14px; pointer-events: auto; }
+#touch button {
+  width: 68px; height: 68px; border-radius: 50%; border: 3px solid rgba(255,255,255,.7); background: rgba(0,0,0,.35);
+  color: #fff; font-family: inherit; font-size: 18px; touch-action: none;
+}
+#touch button.a { background: rgba(216,40,0,.55); }
+#touch button.b { background: rgba(32,56,236,.55); }
+body.touch #touch { display: flex; }
+
+.select { display: flex; align-items: center; gap: 14px; font-size: clamp(9px, 1.5vw, 15px); text-shadow: 2px 2px 0 #000; background: rgba(0,0,0,.45); padding: 10px 14px; border-radius: 8px; color: #ffd23a; }
+.select button { font-family: inherit; font-size: inherit; background: #d82800; color: #fff; border: 2px solid #fff; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.select button:hover { background: #ff4a20; }
+#intro-hint { font-size: clamp(8px, 1.2vw, 12px); color: #9fdcff; min-height: 1em; }
+#toast { position: fixed; left: 50%; top: 22%; transform: translateX(-50%); display: none; z-index: 9; text-align: center;
+  font-size: clamp(12px, 2.4vw, 24px); line-height: 1.4; text-shadow: 3px 3px 0 #000; background: rgba(0,0,0,.5); padding: 18px 26px; border-radius: 10px; }
+#toast.show { display: block; }
