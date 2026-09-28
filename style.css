@@ -81,11 +81,23 @@ body.touch #touch { display: flex; }
 .bump { animation: hudBump .25s ease-out; }
 @keyframes hudBump { 0% { transform: scale(1.35); color: #ffe060; } 100% { transform: scale(1); } }
 
-/* secret level select (B + N + M on the title screen) */
+/* title menu */
+.menu { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.mbtn { font-family: inherit; font-size: clamp(10px, 1.5vw, 15px); color: #fff; background: linear-gradient(#5a6cff, #2a36b8); border: 3px solid #fff;
+  border-radius: 10px; padding: 12px 18px; cursor: pointer; text-shadow: 2px 2px 0 #000; box-shadow: 0 0 0 3px #000, 0 6px 0 #000;
+  transition: transform .1s, filter .1s; }
+.mbtn.go { background: linear-gradient(#ff5a4a, #c01818); }
+.mbtn:hover { transform: translateY(-2px); filter: brightness(1.15); }
+.mbtn:active { transform: translateY(3px); box-shadow: 0 0 0 3px #000, 0 2px 0 #000; }
+#title.selecting .menu, #title.selecting .controls { display: none; }
+.ls-back { font-family: inherit; font-size: clamp(8px, 1vw, 10px); color: #fff; background: #3a2a5a; border: 2px solid #b8c0ff; border-radius: 6px;
+  padding: 6px 12px; cursor: pointer; text-shadow: 1px 1px 0 #000; }
+.ls-back:hover { background: #54407e; }
+
+/* level select */
 #levelsel { display: none; flex-direction: column; align-items: center; gap: 10px; background: rgba(10,6,24,.72); border: 3px solid #ffd23a;
   border-radius: 12px; padding: 12px 14px; box-shadow: 0 0 0 3px #000, 0 10px 40px rgba(0,0,0,.6); max-width: calc(100vw - 32px); }
-#title.cheat #levelsel { display: flex; animation: lsPop .45s cubic-bezier(.2,1.6,.4,1); }
-#title.cheat .controls { display: none; }
+#title.selecting #levelsel { display: flex; animation: lsPop .45s cubic-bezier(.2,1.6,.4,1); }
 @keyframes lsPop { from { transform: scale(.3) rotate(-6deg); opacity: 0; } to { transform: none; opacity: 1; } }
 .ls-title { color: #ffd23a; font-size: clamp(9px, 1.4vw, 14px); text-shadow: 2px 2px 0 #000; animation: lsGlow 1.2s ease-in-out infinite alternate; }
 @keyframes lsGlow { to { color: #fff; text-shadow: 2px 2px 0 #000, 0 0 12px #ffd23a; } }

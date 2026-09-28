@@ -6,6 +6,7 @@
   const DT = 1 / 60;
   const GRAV_UP = 34, GRAV = 90, MAX_FALL = 22;
   const WALK = 6.2, RUN = 10, ACC = 20, ACC_RUN = 24, DEC = 16, SKID = 42, AIR_ACC = 15;
+  const DASH_V = 17;
   const JUMP_V = 16.5, JUMP_V_RUN = 17.8, BOUNCE = 12, BOUNCE_HOLD = 16.5;
   const ENEMY_SPD = 2.2, SHELL_SPD = 13, ITEM_SPD = 3.6, FIRE_SPD = 15;
   const CAM_D = 14.2, CAM_Y = 7.3, FOV = 50;
@@ -27,6 +28,7 @@
     jungle: { bg: ['#4a7a5a', '#8ab890', '#c8e0c0'], fog: 0x8ab098, fogNear: 25, fogFar: 90, hemi: [0xe0ffe0, 0x2a4a20, 1.1], sun: [0xfff0d0, 1.8], music: 'jungle', point: 0, weather: 'rain', dust: 0xa08a60 },
     volcano: { bg: ['#1a0404', '#5a1408', '#b03a10'], fog: 0x4a1a10, fogNear: 30, fogFar: 110, hemi: [0xffa880, 0x3a1410, 1.15], sun: [0xffa070, 2.1], music: 'volcano', point: 14, weather: 'ash', lava: true, dust: 0x6a5a58 },
     fortress: { bg: ['#06020e', '#1a0830', '#300a40'], fog: 0x1a0828, fogNear: 30, fogFar: 90, hemi: [0xb080ff, 0x180818, 0.65], sun: [0xc090ff, 1.0], music: 'fortress', point: 14, weather: 'spirits', lava: true, dust: 0x8a7a9a },
+    speedway: { bg: ['#1c5ad0', '#58a8ff', '#bfe6ff', '#fff2d0'], fog: 0xcfe6ff, fogNear: 45, fogFar: 150, hemi: [0xffffff, 0x6a6a5a, 1.25], sun: [0xfff0d8, 2.5], music: 'speedway', point: 0, weather: 'confetti', dust: 0xb0b0b8 },
     castle: { bg: ['#100000', '#300808', '#501008'], fog: 0x200404, fogNear: 30, fogFar: 90, hemi: [0xff9070, 0x200808, 0.7], sun: [0xff9060, 1.0], music: 'castle', point: 14, weather: 'embers', lava: true , dust: 0x9a8a80 },
   };
 
@@ -81,14 +83,11 @@
     ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
     ArrowUp: 'jump', KeyW: 'jump', Space: 'jump', KeyZ: 'jump', KeyK: 'jump',
     ShiftLeft: 'run', ShiftRight: 'run', KeyX: 'run', KeyJ: 'run',
-    ArrowDown: 'down', KeyS: 'down', Enter: 'start', KeyP: 'pause', Escape: 'pause', KeyM: 'mute',
+    ArrowDown: 'down', KeyS: 'down', Enter: 'start', KeyP: 'pause', Escape: 'pause', KeyM: 'mute', KeyL: 'levels',
   };
   function press(k) { if (!keys[k]) pressed[k] = true; keys[k] = true; }
   function release(k) { keys[k] = false; }
-  const raw = {};
   window.addEventListener('keydown', e => {
-    raw[e.code] = true;
-    if (raw.KeyB && raw.KeyN && raw.KeyM) unlockSelect();
     if (G.state === 'title' && G.selectOpen && !e.repeat && (e.code === 'ArrowUp' || e.code === 'ArrowDown')) {
       e.preventDefault(); changeSelect(e.code === 'ArrowUp' ? -3 : 3); return;
     }
@@ -97,8 +96,8 @@
     SFX.init();
     if (!e.repeat) press(k); else keys[k] = true;
   });
-  window.addEventListener('keyup', e => { raw[e.code] = false; const k = KEYMAP[e.code]; if (k) { e.preventDefault(); release(k); } });
-  window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; for (const k in raw) raw[k] = false; });
+  window.addEventListener('keyup', e => { const k = KEYMAP[e.code]; if (k) { e.preventDefault(); release(k); } });
+  window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
   if ('ontouchstart' in window || navigator.maxTouchPoints > 0) document.body.classList.add('touch');
   document.querySelectorAll('#touch button').forEach(btn => {
@@ -223,14 +222,14 @@
       while (y < L.h && solidAt(sx, y)) y++;
       sy = y;
     }
-    Object.assign(P, { z: 0, x: sx, y: sy, vx: 0, vy: 0, dir: 1, onGround: false, inv: 0, star: 0, combo: 0, riding: null, hidden: false, dieJumped: false, skid: false });
+    Object.assign(P, { z: 0, x: sx, y: sy, vx: 0, vy: 0, dir: 1, onGround: false, inv: 0, star: 0, combo: 0, riding: null, hidden: false, dieJumped: false, skid: false, duck: false, boost: 0 });
     P.h = P.size > 0 ? BIG_H : SMALL_H;
     P.model.setPalette(P.size === 2 ? 'fire' : 'normal');
     P.model.root.visible = true;
     P.model.body.rotation.set(0, 1.1, 0);
     camX = Math.max(halfW, P.x);
     clampCam();
-    G.time = 400; G.timeAcc = 0; G.hurried = false; G.freeze = 0;
+    G.time = def.time || 400; G.timeAcc = 0; G.hurried = false; G.freeze = 0;
     G.windT = 0; DECOR.gust = 0; L.meteorT = 3;
   }
 
@@ -358,6 +357,7 @@
       case 'U': return T.used;
       case 'J': return T.jelly;
       case 'D': return T.crumble;
+      case 'A': return T.dash;
       default: return T.hard;
     }
   }
@@ -740,7 +740,7 @@
     const was = P.size;
     P.size = s;
     const nh = s > 0 ? BIG_H : SMALL_H;
-    P.h = nh;
+    P.h = nh; P.duck = false;
     P.model.setPalette(s === 2 ? 'fire' : 'normal');
     if (s > 0 && was === 0) { G.freeze = 0.9; G.freezeKind = 'grow'; }
     if (s === 0 && was > 0) { G.freeze = 0.9; G.freezeKind = 'shrink'; }
@@ -758,6 +758,7 @@
     G.state = 'dying'; G.timer = 0;
     P.dieJumped = false; P.vx = 0; P.vy = 0; P.star = 0; P.inv = 0;
     if (P.size > 0) { P.size = 0; P.h = SMALL_H; }
+    P.duck = false;
     P.model.setPalette('normal');
     SFX.Music.stop();
     SFX.fx.die();
@@ -774,14 +775,29 @@
   function updatePlayer() {
     const p = P, ph = L.phys;
     if (p.riding) { p.x += p.riding.dx; p.y = p.riding.y + p.riding.h; }
-    const dirIn = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+    // big Mario ducks while holding down (smaller hitbox; stays down under low ceilings)
+    if (p.size > 0 && !ph.water) {
+      if (keys.down && p.onGround) p.duck = true;
+      else if (p.duck && !keys.down && !boxSolid(p.x, p.y, p.w, BIG_H)) p.duck = false;
+    } else if (p.duck && !boxSolid(p.x, p.y, p.w, BIG_H)) p.duck = false;
+    if (p.size > 0) p.h = p.duck ? SMALL_H : BIG_H;
+    // ducking on the ground: slide to a stop, or crawl slowly when a low ceiling keeps Mario down
+    const crawl = p.duck && p.onGround && boxSolid(p.x, p.y, p.w, BIG_H);
+    const dirIn = p.duck && p.onGround && !crawl ? 0 : (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
     const run = !!keys.run;
-    let maxV = run ? RUN : WALK, acc = run ? ACC_RUN : ACC, dec = DEC, skid = SKID, air = AIR_ACC;
+    let maxV = crawl ? 2 : run ? RUN : WALK, acc = run ? ACC_RUN : ACC, dec = DEC, skid = SKID, air = AIR_ACC;
+    // dash panels: a burst of super speed that carries through jumps and duck-slides
+    if (p.boost > 0) {
+      p.boost -= DT;
+      maxV = Math.max(maxV, DASH_V); dec = 1.5;
+      if (Math.random() < 0.6) sparkle(p.x + p.w / 2 - Math.sign(p.vx) * 0.4, p.y + Math.random() * p.h, 1, 0xffe040, 1, 0.4);
+    }
     if (ph.water) {
       maxV = p.onGround ? (run ? 3.6 : 2.8) : (run ? 4.8 : 3.8);
       acc = 9; dec = p.onGround ? 10 : 1.5; skid = 14; air = 7;
     }
     if (ph.ice && p.onGround) { acc *= 0.35; dec *= 0.2; skid *= 0.3; }
+    const v0 = Math.abs(p.vx);
     if (p.onGround) {
       if (dirIn !== 0) {
         if (Math.sign(p.vx) === -dirIn && Math.abs(p.vx) > 0.8) { p.vx += dirIn * skid * DT; p.skid = true; }
@@ -800,8 +816,8 @@
       p.vx = Math.abs(p.vx) <= d ? 0 : p.vx - Math.sign(p.vx) * d;
     }
     if (Math.abs(p.vx) > maxV) {
-      const over = Math.abs(p.vx) - maxV;
-      p.vx = Math.sign(p.vx) * (maxV + Math.max(0, over - (ph.water ? 20 : DEC) * DT));
+      // cap at top speed; anything above it (e.g. after a dash panel) bleeds off gradually
+      p.vx = Math.sign(p.vx) * Math.max(maxV, Math.min(Math.abs(p.vx), v0 - (ph.water ? 20 : DEC) * DT));
     }
     if (ph.water) {
       if (pressed.jump) {
@@ -843,6 +859,10 @@
         sparkle(fb.x + 0.5, fb.y + 1, 5, 0x80ffb0, 3, 0.45);
         SFX.fx.spring();
       } else if (fb && fb.type === 'D' && !fb.crumbleT) { fb.crumbleT = DT; SFX.fx.crumble(); }
+      else if (fb && fb.type === 'A') {
+        if (p.boost <= 0.2) { SFX.fx.dash(); sparkle(fb.x + 0.5, fb.y + 1, 6, 0xffe040, 4, 0.5); }
+        p.boost = 1.1; p.vx = Math.max(p.vx, DASH_V); p.dir = 1;
+      }
     }
     const minX = camX - halfW + 0.2;
     if (p.x < minX) { p.x = minX; if (p.vx < 0) p.vx = 0; }
@@ -1297,7 +1317,7 @@
     camX = Math.min(Math.max(camX, halfW), L.w - halfW);
   }
   function updateCamera() {
-    const target = P.x + P.w / 2 + 1;
+    const target = P.x + P.w / 2 + 1 + Math.max(0, P.boost) * 3;
     if (target > camX) camX = target;
     clampCam();
   }
@@ -1331,11 +1351,9 @@
   function updateSelect() {
     document.querySelectorAll('#ls-grid button').forEach((b, i) => b.classList.toggle('on', i === G.startIdx));
   }
-  function unlockSelect() {
+  function openSelect() {
     if (G.state !== 'title' || G.selectOpen) return;
     G.selectOpen = true;
-    // undo a mute toggled by the M of this key combo
-    if (G.muteAt != null && G.t - G.muteAt < 1.5) { SFX.toggleMute(); G.muteAt = null; }
     const grid = $('ls-grid');
     grid.innerHTML = '';
     LEVELS.forEach((lv, i) => {
@@ -1350,9 +1368,15 @@
       });
       grid.appendChild(b);
     });
-    $('title').classList.add('cheat');
+    $('title').classList.add('selecting');
     updateSelect();
     SFX.fx.oneup();
+  }
+  function closeSelect() {
+    if (!G.selectOpen) return;
+    G.selectOpen = false;
+    $('title').classList.remove('selecting');
+    SFX.fx.kick();
   }
   function changeSelect(d) {
     G.startIdx = (G.startIdx + d + LEVELS.length) % LEVELS.length;
@@ -1635,8 +1659,11 @@
   function handleMeta() {
     if (pressed.mute) {
       pressed.mute = false;
-      // M is also part of the B+N+M secret, so don't toggle sound while the other two are held
-      if (!(raw.KeyB || raw.KeyN)) { SFX.toggleMute(); G.muteAt = G.t; }
+      SFX.toggleMute();
+    }
+    if (pressed.levels) {
+      pressed.levels = false;
+      if (G.state === 'title') { if (G.selectOpen) closeSelect(); else openSelect(); }
     }
     if (pressed.start) {
       pressed.start = false;
@@ -1646,6 +1673,7 @@
     }
     if (pressed.pause) {
       pressed.pause = false;
+      if (G.state === 'title') { closeSelect(); return; }
       if (G.state === 'playing' || G.paused) {
         G.paused = !G.paused;
         show('pause', G.paused);
@@ -1672,8 +1700,12 @@
     const sq = P.sq || 0;
     const idle = P.onGround && Math.abs(P.vx) < 0.2 && (G.state === 'playing' || G.state === 'title');
     const breathe = idle ? 1 + Math.sin(t * 3) * 0.018 : 1;
-    pm.inner.scale.set(s[0] * (1 + sq * 0.6), s[1] * (1 - sq) * breathe, s[2] * (1 + sq * 0.6));
-    pm.head.scale.set(1, s[0] / s[1], 1);   // keep the head round when big
+    // ducking: ease into a squat
+    P.duckK = (P.duckK || 0) + (((P.duck && useBig) ? 1 : 0) - (P.duckK || 0)) * 0.35;
+    const dk = P.duckK;
+    const sy = s[1] * (1 - sq) * breathe * (1 - dk * 0.4), sxz = 1 + sq * 0.6 + dk * 0.12;
+    pm.inner.scale.set(s[0] * sxz, sy, s[2] * sxz);
+    pm.head.scale.set(1, s[0] * sxz / sy, 1);   // keep the head round when big or ducking
     // blink every few seconds, glance around when idle
     const blink = (t % 3.3) < 0.1 || ((t + 0.25) % 7.1) < 0.08;
     pm.eyes.forEach(e => { e.scale.y = blink ? 0.12 : 1; });
@@ -1710,8 +1742,10 @@
       legSwing = Math.sin(P.anim * 2.2) * Math.min(1, Math.abs(P.vx) / 6) * 0.9;
       armL = legSwing; armR = -legSwing;
     }
+    if (dk > 0.05) { legSwing *= 1 - dk; armL = armL * (1 - dk) + 0.7 * dk; armR = armR * (1 - dk) + 0.7 * dk; lean = lean * (1 - dk); }
     if (P.throwT > 0) armR = 1.8;
     lL.rotation.x = legSwing; lR.rotation.x = -legSwing;
+    lL.rotation.z = -0.35 * dk; lR.rotation.z = 0.35 * dk;
     aL.rotation.x = -armL; aR.rotation.x = -armR;
     aL.rotation.z = G.state === 'dying' ? 0.4 : 0; aR.rotation.z = G.state === 'dying' ? -0.4 : 0;
     pm.body.rotation.z = lean;
@@ -1790,6 +1824,7 @@
       }
     }
     for (const lf of L.lifts) lf.mesh.position.set(lf.x + lf.w / 2, lf.y + lf.h / 2, 0);
+    if (L.theme === 'speedway') { L.T.dash.map.offset.x = -t * 2; L.T.dash.emissiveIntensity = 0.6 + Math.sin(t * 10) * 0.3; }
     L.T.q.emissiveIntensity = 0.12 + (Math.sin(t * 4) * 0.5 + 0.5) * 0.3;
     for (const c of L.clouds) {
       if (c.flicker) { c.light.intensity = c.base * (0.8 + Math.random() * 0.4); c.m.scale.y = 0.9 + Math.random() * 0.3; }
@@ -1881,6 +1916,8 @@
     const sh = G.shake || 0;
     const sx = (Math.random() - 0.5) * sh, sy = (Math.random() - 0.5) * sh;
     G.shake = sh * 0.88; if (G.shake < 0.005) G.shake = 0;
+    const fov = FOV + (G.state === 'playing' && P.boost > 0 ? 7 : 0);
+    if (Math.abs(camera.fov - fov) > 0.05) { camera.fov += (fov - camera.fov) * 0.12; camera.updateProjectionMatrix(); }
     camera.position.set(cx - 1.2 + sway * 0.3 + sx, CAM_Y + 3.4 + sy, CAM_D);
     camera.lookAt(cx + sx * 0.5, CAM_Y - 0.2 + sy * 0.5, 0);
     sun.position.set(cx - 12, 30, 20);
@@ -1929,15 +1966,15 @@
   }
 
   // debug hook for automated testing
-  window.__game = { G, P, get L() { return L; }, keys, pressed, startIntro, loadLevel, setSize, changeSelect, unlockSelect };
-  // touch devices: tap the logo five times quickly to reveal the secret level select
-  let logoTaps = [];
-  document.querySelector('#title .logo').addEventListener('pointerdown', e => {
-    e.stopPropagation(); SFX.init();
-    const now = performance.now();
-    logoTaps = logoTaps.filter(t => now - t < 1500); logoTaps.push(now);
-    if (logoTaps.length >= 5) unlockSelect();
-  });
+  window.__game = { G, P, get L() { return L; }, keys, pressed, startIntro, loadLevel, setSize, changeSelect, openSelect, closeSelect, unlockSelect: openSelect };
+  // title screen menu buttons (mouse / touch)
+  function onTap(id, fn) {
+    $(id).addEventListener('pointerdown', e => { e.stopPropagation(); SFX.init(); if (G.state === 'title') fn(); });
+  }
+  onTap('btn-start', newGame);
+  onTap('btn-select', openSelect);
+  onTap('ls-back', closeSelect);
+  $('levelsel').addEventListener('pointerdown', e => e.stopPropagation());
 
   toTitle();
   requestAnimationFrame(frame);

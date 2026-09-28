@@ -3,7 +3,8 @@
 // Tile chars: '#' ground, 'B' brick, '?' coin block, 'M' power-up block, 'S' star block, 'L' 1-UP block,
 // 'C' multi-coin brick, 'U' used block, 'X' hard block, 'P' pipe, 'T' treetop platform,
 // 'K' bullet-bill cannon, 'R' bridge (collapses when the axe is touched),
-// 'J' jelly spring block (bounces Mario high), 'D' crumbling block (falls shortly after being stood on).
+// 'J' jelly spring block (bounces Mario high), 'D' crumbling block (falls shortly after being stood on),
+// 'A' dash panel (set into the ground; launches Mario forward at super speed).
 const LEVEL_H = 15;
 
 class LevelBuilder {
@@ -11,6 +12,7 @@ class LevelBuilder {
     this.w = w; this.h = LEVEL_H; this.theme = theme; this.name = name;
     this.water = !!opts.water; this.ice = !!opts.ice; this.lowgrav = !!opts.lowgrav;
     this.wind = !!opts.wind; this.meteors = !!opts.meteors; this.dark = !!opts.dark;
+    this.time = opts.time || 400;
     this.piranhas = []; this.cannons = []; this.firebars = []; this.podoboos = [];
     this.boss = null; this.axe = null; this.princess = null;
     this.grid = Array.from({ length: LEVEL_H }, () => new Array(w).fill(' '));
@@ -33,6 +35,9 @@ class LevelBuilder {
   cannon(x, h) { this.cannons.push({ x, y: 2 + h - 1 }); return this.fill(x, x, 2, 2 + h - 1, 'K'); }
   firebar(x, y, len, speed) { this.set(x, y, 'X'); this.firebars.push({ x, y, len, speed }); return this; }
   podoboo(x) { this.podoboos.push({ x }); return this; }
+  dash(x, n = 2) { return this.fill(x, x + n - 1, 1, 1, 'A'); }
+  // solid wall with a one-tile-high slot at ground level: small Mario walks through, big Mario must duck-slide
+  lowWall(x0, x1, top = 6) { return this.fill(x0, x1, 3, top, 'X'); }
   bridge(x0, x1, y) { return this.fill(x0, x1, y, y, 'R'); }
   column(x, h) { return this.fill(x, x, 2, 2 + h - 1, 'X'); }
   stairsUp(x, n) { for (let i = 0; i < n; i++) this.column(x + i, i + 1); return this; }
@@ -326,35 +331,40 @@ const LEVELS = [
     },
   },
   {
-    name: '3-3', title: "BOWSER'S LAVA CASTLE", hint: 'DEFEAT BOWSER AND SAVE THE PRINCESS!',
+    name: '3-3', title: 'TURBO SPEEDWAY', hint: 'HOLD RUN! DASH PANELS BOOST YOU - DUCK TO SLIDE UNDER WALLS', time: 200,
     build() {
-      const b = new LevelBuilder(160, 'castle', '3-3');
-      b.fill(0, 159, 13, 13, 'X');
-      b.start = { x: 2, y: 5 };
-      b.ground(0, 14).fill(0, 5, 2, 4, 'X').fill(6, 8, 2, 3, 'X').fill(9, 10, 2, 2, 'X');
-      b.podoboo(16.5);
-      b.ground(19, 40);
-      b.firebar(26, 5, 5, 1.8).firebar(34, 5, 5, -1.8);
-      b.blocks(29, 9, '?M?');
-      b.podoboo(42.5);
-      b.ground(45, 70).fill(45, 52, 2, 3, 'X');
-      b.firebar(56, 6, 6, 1.5);
-      b.enemy('goomba', 60).enemy('goomba', 61.5);
-      b.fill(62, 70, 9, 12, 'X');
-      b.fill(73, 74, 0, 4, 'X');
-      b.podoboo(72).podoboo(75.5);
-      b.ground(77, 100);
-      b.firebar(82, 6, 5, 2).firebar(90, 6, 5, -2);
-      b.blocks(86, 10, '?M?');
-      b.enemy('koopa', 95);
-      b.podoboo(102.5);
-      b.ground(105, 125);
-      b.firebar(112, 7, 6, 1.4);
-      b.enemy('goomba', 116).enemy('goomba', 118);
-      b.bridge(126, 140, 1);
-      b.ground(141, 159);
-      b.setBoss(136, 2).setAxe(141, 2).setPrincess(152, 2, 'toad');
-      b.mid = 77;
+      const b = new LevelBuilder(230, 'speedway', '3-3', { time: 200 });
+      // warm-up straight: a gap that needs a running jump
+      b.ground(0, 28).ground(35, 60).ground(72, 100).ground(106, 140).ground(151, 185).ground(193, 229);
+      b.blocks(12, 5, 'B?B');
+      b.enemy('goomba', 20);
+      for (let i = 0; i < 5; i++) b.coinRow(29 + i, 4 + [0, 1, 2, 1, 0][i], 1);
+      // first dash panel: launch across a canyon too wide to jump normally
+      b.blocks(40, 5, '?M?');
+      b.enemy('goomba', 44);
+      b.dash(51, 2);
+      for (let i = 0; i < 9; i++) b.coinRow(62 + i, 5 + Math.round(Math.sin(i / 8 * Math.PI) * 3), 1);
+      // dash + low wall: big Mario must duck-slide through the slot
+      b.dash(77, 2);
+      b.lowWall(83, 93);
+      b.coinRow(84, 2, 9);
+      for (let i = 0; i < 5; i++) b.coinRow(101 + i, 5 + [0, 1, 2, 1, 0][i], 1);
+      // bullet bill alley
+      b.blocks(114, 5, 'BSB');
+      b.cannon(120, 2);
+      b.enemy('goomba', 126);
+      b.dash(135, 2);
+      for (let i = 0; i < 10; i++) b.coinRow(141 + i, 5 + Math.round(Math.sin(i / 9 * Math.PI) * 3), 1);
+      // long duck-slide tunnel
+      b.dash(155, 2);
+      b.lowWall(160, 173);
+      b.coinRow(161, 2, 12);
+      // one more dash panel launches Mario over the final canyon
+      b.dash(180, 2);
+      for (let i = 0; i < 7; i++) b.coinRow(186 + i, 5 + [0, 1, 2, 3, 2, 1, 0][i], 1);
+      b.stairsUp(200, 8).column(208, 8);
+      b.flag(216).castle(220);
+      b.mid = 106;
       return b.done();
     },
   },

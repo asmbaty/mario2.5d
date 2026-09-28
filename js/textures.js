@@ -245,6 +245,14 @@ const TEX = (() => {
     grass: '#4a3e58', grassLight: '#6a5a7a',
     tree: '#35b04a', treeLight: '#7ee07a', treeDark: '#1f7a30', stone: true, ownCastle: true,
   };
+  PALETTES.speedway = {
+    base: '#d84a30', mortar: '#4a1208', light: '#ff9a70', dark: '#a02a18',
+    usedBase: '#8a7060', usedDark: '#3a2a20',
+    hardBase: '#8a94a8', hardLight: '#d8e0f0', hardDark: '#3a4254',
+    dirt: '#7a5a3a', dirtDark: '#5a3e24', dirtLight: '#9a7650',
+    grass: '#4a4c56', grassLight: '#62646e', grassDark: '#34363e',
+    tree: '#35b04a', treeLight: '#7ee07a', treeDark: '#1f7a30', asphalt: true,
+  };
   ['haunted', 'moon', 'castle'].forEach(k => { PALETTES[k].ownCastle = true; });
 
   function planks(p) {
@@ -280,12 +288,42 @@ const TEX = (() => {
     });
   }
 
+  // racetrack: asphalt with a dashed lane line on top, red/white kerb on the sides
+  function asphalt(p) {
+    return canvasTex(g => {
+      P(g, p.grass, 0, 0, 16, 16);
+      const r = rng(21);
+      for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { const v = r(); if (v < 0.1) P(g, p.grassDark, x, y); else if (v < 0.17) P(g, p.grassLight, x, y); }
+      P(g, '#f4f4f0', 2, 7, 8, 2);
+    });
+  }
+  function kerb(p) {
+    return canvasTex(g => {
+      P(g, p.dirt, 0, 0, 16, 16);
+      const r = rng(9);
+      for (let y = 5; y < 16; y++) for (let x = 0; x < 16; x++) { const v = r(); if (v < 0.08) P(g, p.dirtDark, x, y); else if (v < 0.14) P(g, p.dirtLight, x, y); }
+      P(g, '#e02a1a', 0, 0, 8, 4); P(g, '#f8f8f8', 8, 0, 8, 4);
+      P(g, '#ff6a50', 0, 0, 8, 1); P(g, '#ffffff', 8, 0, 8, 1);
+      P(g, '#2a2a30', 0, 4, 16, 1);
+    });
+  }
+  // dash panel: glowing chevrons pointing right (+x)
+  function dash() {
+    return canvasTex(g => {
+      P(g, '#1a1a40', 0, 0, 16, 16);
+      for (const ox of [0, 8]) for (let i = 0; i < 6; i++) {
+        P(g, '#ffe030', ox + 1 + (i < 3 ? i : 5 - i) * 2, 2 + i * 2, 3, 2);
+      }
+      P(g, '#4040a0', 0, 0, 16, 1); P(g, '#0a0a20', 0, 15, 16, 1);
+    });
+  }
+
   function mats(theme) {
     if (cache[theme]) return cache[theme];
     const p = PALETTES[theme];
     const std = (map, o = {}) => new THREE.MeshStandardMaterial({ map, roughness: 0.85, metalness: 0, ...o });
     const stoneStyle = !!p.stone;
-    const topTex = p.planks ? planks(p) : stoneStyle ? stone(p) : speckle(p.grass, p.grassLight, p.grassDark || '#2c9434', 5, 0.2);
+    const topTex = p.asphalt ? asphalt(p) : p.planks ? planks(p) : stoneStyle ? stone(p) : speckle(p.grass, p.grassLight, p.grassDark || '#2c9434', 5, 0.2);
     const qt = question();
     const m = {
       brick: std(brick(p)),
@@ -294,7 +332,7 @@ const TEX = (() => {
       hard: std(hard(p)),
       dirt: std(stoneStyle ? stone(p) : speckle(p.dirt, p.dirtDark, p.dirtLight, 11, 0.16)),
       grassTop: std(topTex, theme === 'snow' ? { roughness: 0.35, metalness: 0.05 } : {}),
-      grassSide: std(stoneStyle ? stone(p) : p.planks ? planks(p) : grassSide(p)),
+      grassSide: std(p.asphalt ? kerb(p) : stoneStyle ? stone(p) : p.planks ? planks(p) : grassSide(p)),
       treeTop: std(treeTop(p)),
       treeSide: std(treeSide(p)),
       bark: std(bark()),
@@ -302,6 +340,8 @@ const TEX = (() => {
       jelly: std(jelly(), { roughness: 0.15, metalness: 0.05, emissive: 0x20a050, emissiveIntensity: 0.35, transparent: true, opacity: 0.88 }),
       crumble: std(crumble()),
     };
+    const dt = dash();
+    m.dash = std(dt, { emissive: 0xffffff, emissiveMap: dt, emissiveIntensity: 0.8, roughness: 0.4 });
     m.grass = [m.grassSide, m.grassSide, m.grassTop, m.dirt, m.grassSide, m.grassSide];
     m.tree = [m.treeSide, m.treeSide, m.treeTop, m.treeSide, m.treeSide, m.treeSide];
     return (cache[theme] = m);

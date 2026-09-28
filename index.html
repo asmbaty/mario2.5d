@@ -28,13 +28,18 @@
     <div class="l3">2.5D</div>
   </div>
   <div id="levelsel">
-    <div class="ls-title">★ SECRET LEVEL SELECT ★</div>
+    <div class="ls-title">★ SELECT LEVEL ★</div>
     <div class="ls-grid" id="ls-grid"></div>
-    <div class="ls-hint">ARROWS CHOOSE · ENTER START</div>
+    <div class="ls-hint">ARROWS CHOOSE · ENTER START · ESC BACK</div>
+    <button class="ls-back" id="ls-back">✕ BACK</button>
   </div>
-  <div class="blink" id="press-start">PRESS ENTER OR TAP TO START</div>
+  <div class="menu" id="menu">
+    <button id="btn-start" class="mbtn go">▶ START GAME</button>
+    <button id="btn-select" class="mbtn">★ SELECT LEVEL</button>
+  </div>
+  <div class="blink" id="press-start">ENTER TO START · L TO SELECT LEVEL</div>
   <div class="controls">
-    <div>← → / A D &nbsp; MOVE</div>
+    <div>← → / A D &nbsp; MOVE · ↓ DUCK</div>
     <div>SPACE / Z / ↑ &nbsp; JUMP</div>
     <div>SHIFT / X &nbsp; RUN · FIREBALL</div>
     <div>P PAUSE &nbsp;·&nbsp; M MUTE</div>
@@ -56,6 +61,7 @@
 <div id="touch">
   <div class="pad">
     <button data-k="left">◀</button>
+    <button data-k="down">▼</button>
     <button data-k="right">▶</button>
   </div>
   <div class="pad">
