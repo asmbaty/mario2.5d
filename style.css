@@ -80,3 +80,21 @@ body.touch #touch { display: flex; }
 #hud-score, #hud-coins { display: inline-block; }
 .bump { animation: hudBump .25s ease-out; }
 @keyframes hudBump { 0% { transform: scale(1.35); color: #ffe060; } 100% { transform: scale(1); } }
+
+/* secret level select (B + N + M on the title screen) */
+#levelsel { display: none; flex-direction: column; align-items: center; gap: 10px; background: rgba(10,6,24,.72); border: 3px solid #ffd23a;
+  border-radius: 12px; padding: 12px 14px; box-shadow: 0 0 0 3px #000, 0 10px 40px rgba(0,0,0,.6); max-width: calc(100vw - 32px); }
+#title.cheat #levelsel { display: flex; animation: lsPop .45s cubic-bezier(.2,1.6,.4,1); }
+#title.cheat .controls { display: none; }
+@keyframes lsPop { from { transform: scale(.3) rotate(-6deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.ls-title { color: #ffd23a; font-size: clamp(9px, 1.4vw, 14px); text-shadow: 2px 2px 0 #000; animation: lsGlow 1.2s ease-in-out infinite alternate; }
+@keyframes lsGlow { to { color: #fff; text-shadow: 2px 2px 0 #000, 0 0 12px #ffd23a; } }
+.ls-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.ls-grid button { font-family: inherit; color: #fff; border: 2px solid rgba(255,255,255,.35); border-radius: 7px; cursor: pointer; padding: 6px 8px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; text-align: left; text-shadow: 1px 1px 0 #000;
+  transition: transform .12s, border-color .12s, box-shadow .12s; }
+.ls-grid button b { font-size: clamp(9px, 1.3vw, 13px); color: #ffd23a; }
+.ls-grid button span { font-size: clamp(6px, .75vw, 8px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.ls-grid button:hover { transform: translateY(-2px); }
+.ls-grid button.on { border-color: #fff; transform: scale(1.07); box-shadow: 0 0 0 2px #000, 0 0 16px rgba(255,210,58,.9); z-index: 1; }
+.ls-hint { font-size: clamp(7px, .9vw, 9px); color: #b8c0ff; }

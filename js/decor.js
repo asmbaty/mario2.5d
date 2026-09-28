@@ -288,7 +288,12 @@ const DECOR = (() => {
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const mat = new THREE.PointsMaterial({ color: W.color, size: W.size, map: TEX.roundSprite(), transparent: true, depthWrite: false, opacity: 0.9, blending: kind === 'fireflies' || kind === 'embers' ? THREE.AdditiveBlending : THREE.NormalBlending });
+    if (W.colors) {
+      const col = new Float32Array(W.n * 3), c = new THREE.Color();
+      for (let i = 0; i < W.n; i++) { c.setHex(W.colors[i % W.colors.length]); col.set([c.r, c.g, c.b], i * 3); }
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    }
+    const mat = new THREE.PointsMaterial({ color: W.colors ? 0xffffff : W.color, vertexColors: !!W.colors, size: W.size, map: TEX.roundSprite(), transparent: true, depthWrite: false, opacity: 0.9, blending: kind === 'fireflies' || kind === 'embers' || kind === 'glitter' || kind === 'spirits' ? THREE.AdditiveBlending : THREE.NormalBlending });
     const pts = new THREE.Points(g, mat);
     pts.frustumCulled = false;
     world.add(pts);
@@ -308,5 +313,5 @@ const DECOR = (() => {
     };
   }
 
-  return { themes, weather };
+  return { themes, weather, WEATHER, util: { backPlane, clouds, everyGround }, gust: 0 };
 })();

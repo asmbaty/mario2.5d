@@ -343,17 +343,19 @@ const MODELS = (() => {
     bb(5.2, 0.18, D + 0.2, 0, 3.25, CZ, stone);
     for (let i = 0; i < 6; i++) { bb(0.5, 0.55, 0.35, -2.25 + i * 0.9, 3.6, FZ - 0.18); bb(0.5, 0.55, 0.35, -2.25 + i * 0.9, 3.6, FZ - D + 0.18); }
     // plinth
-    bb(5.3, 0.3, D + 0.3, 0, 0.15, CZ, stone);
+    // (split around the doorway so Mario walks straight in without clipping a step)
+    for (const sx of [-1, 1]) bb(1.9, 0.3, D + 0.3, sx * 1.7, 0.15, CZ, stone);
     // door: black recess the player disappears into
-    const door = bx(1.2, 1.75, 1.2, dark, 0, 0.875, FZ - 0.58, root); door.castShadow = false;
-    const archG = geo('castleArch', () => new THREE.CylinderGeometry(0.6, 0.6, 1.2, 20, 1, false, -Math.PI / 2, Math.PI).rotateX(Math.PI / 2));
-    const arch = mesh(archG, dark, 0, 1.75, FZ - 0.58, root); arch.castShadow = false;
-    const frameG = geo('castleFrame', () => new THREE.TorusGeometry(0.68, 0.1, 8, 20, Math.PI));
+    const DW = 1.5, DD = 1.5;
+    const door = bx(DW, 1.75, DD, dark, 0, 0.875, FZ - DD / 2 + 0.02, root); door.castShadow = false;
+    const archG = geo('castleArch2', () => new THREE.CylinderGeometry(DW / 2, DW / 2, DD, 20, 1, false, -Math.PI / 2, Math.PI).rotateX(Math.PI / 2));
+    const arch = mesh(archG, dark, 0, 1.75, FZ - DD / 2 + 0.02, root); arch.castShadow = false;
+    const frameG = geo('castleFrame2', () => new THREE.TorusGeometry(DW / 2 + 0.08, 0.1, 8, 20, Math.PI));
     mesh(frameG, stone, 0, 1.75, FZ + 0.03, root);
-    for (const sx of [-1, 1]) bb(0.2, 1.75, 0.2, sx * 0.68, 0.875, FZ + 0.03, stone);
-    bb(0.24, 0.24, 0.1, 0, 2.5, FZ + 0.06, stone);
+    for (const sx of [-1, 1]) bb(0.2, 1.75, 0.2, sx * (DW / 2 + 0.08), 0.875, FZ + 0.03, stone);
+    bb(0.24, 0.24, 0.1, 0, 2.66, FZ + 0.06, stone);
     // portcullis teeth peeking from the top of the doorway
-    for (let i = -2; i <= 2; i++) { const t = mesh(geo('pcTooth', () => new THREE.ConeGeometry(0.05, 0.25, 4)), mat(0x3a3a40, { metalness: 0.6 }), i * 0.22, 2.08, FZ + 0.01, root); t.rotation.x = Math.PI; }
+    for (let i = -2; i <= 2; i++) { const t = mesh(geo('pcTooth', () => new THREE.ConeGeometry(0.05, 0.25, 4)), mat(0x3a3a40, { metalness: 0.6 }), i * 0.26, 2.33, FZ + 0.01, root); t.rotation.x = Math.PI; }
     // corner turrets with conical roofs and pennants
     const pennants = [];
     for (const sx of [-1, 1]) {
@@ -381,16 +383,16 @@ const MODELS = (() => {
     }
     // banners on the keep
     for (const sx of [-1, 1]) {
-      const b = bx(0.55, 1.2, 0.03, mat(0xb01818, { roughness: 0.9 }), sx * 1.55, 2.25, FZ + 0.02, root);
-      const tip = mesh(geo('bannerTip', () => new THREE.ConeGeometry(0.28, 0.3, 3).rotateZ(Math.PI)), mat(0xb01818), sx * 1.55, 1.52, FZ + 0.02, root); tip.scale.z = 0.1;
-      const em = mesh(geo('bannerEm', () => new THREE.CircleGeometry(0.15, 12)), gold, sx * 1.55, 2.4, FZ + 0.045, root); em.castShadow = false;
-      bx(0.7, 0.05, 0.05, gold, sx * 1.55, 2.86, FZ + 0.04, root);
+      const b = bx(0.55, 1.2, 0.03, mat(0xb01818, { roughness: 0.9 }), sx * 1.7, 2.25, FZ + 0.02, root);
+      const tip = mesh(geo('bannerTip', () => new THREE.ConeGeometry(0.28, 0.3, 3).rotateZ(Math.PI)), mat(0xb01818), sx * 1.7, 1.52, FZ + 0.02, root); tip.scale.z = 0.1;
+      const em = mesh(geo('bannerEm', () => new THREE.CircleGeometry(0.15, 12)), gold, sx * 1.7, 2.4, FZ + 0.045, root); em.castShadow = false;
+      bx(0.7, 0.05, 0.05, gold, sx * 1.7, 2.86, FZ + 0.04, root);
     }
     // wall torches beside the door
     const flames = [];
     for (const sx of [-1, 1]) {
-      bx(0.1, 0.3, 0.14, mat(0x3a2a1a), sx * 0.98, 1.55, FZ + 0.08, root);
-      const f = mesh(geo('torchFlame', () => new THREE.ConeGeometry(0.1, 0.32, 8)), mat(0xffa030, { emissive: 0xff7010, emissiveIntensity: 2.2 }), sx * 0.98, 1.85, FZ + 0.12, root);
+      bx(0.1, 0.3, 0.14, mat(0x3a2a1a), sx * 1.12, 1.55, FZ + 0.08, root);
+      const f = mesh(geo('torchFlame', () => new THREE.ConeGeometry(0.1, 0.32, 8)), mat(0xffa030, { emissive: 0xff7010, emissiveIntensity: 2.2 }), sx * 1.12, 1.85, FZ + 0.12, root);
       f.castShadow = false; flames.push(f);
     }
     // flagpole atop the tower + Armenian flag (raised after the level is cleared)

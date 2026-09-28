@@ -2,13 +2,15 @@
 // Level definitions. Coordinates are in tiles, y = 0 is the bottom row; the ground top is at y = 2.
 // Tile chars: '#' ground, 'B' brick, '?' coin block, 'M' power-up block, 'S' star block, 'L' 1-UP block,
 // 'C' multi-coin brick, 'U' used block, 'X' hard block, 'P' pipe, 'T' treetop platform,
-// 'K' bullet-bill cannon, 'R' bridge (collapses when the axe is touched).
+// 'K' bullet-bill cannon, 'R' bridge (collapses when the axe is touched),
+// 'J' jelly spring block (bounces Mario high), 'D' crumbling block (falls shortly after being stood on).
 const LEVEL_H = 15;
 
 class LevelBuilder {
   constructor(w, theme, name, opts = {}) {
     this.w = w; this.h = LEVEL_H; this.theme = theme; this.name = name;
     this.water = !!opts.water; this.ice = !!opts.ice; this.lowgrav = !!opts.lowgrav;
+    this.wind = !!opts.wind; this.meteors = !!opts.meteors; this.dark = !!opts.dark;
     this.piranhas = []; this.cannons = []; this.firebars = []; this.podoboos = [];
     this.boss = null; this.axe = null; this.princess = null;
     this.grid = Array.from({ length: LEVEL_H }, () => new Array(w).fill(' '));
@@ -38,9 +40,9 @@ class LevelBuilder {
   platform(x, y, len) { return this.fill(x, x + len - 1, y, y, 'T'); }
   enemy(kind, x, y = 2) { this.enemies.push({ kind, x, y }); return this; }
   lift(x, y, w, axis, range, speed) { this.lifts.push({ x, y, w, axis, range, speed }); return this; }
-  setBoss(x, y) { this.boss = { x, y }; return this; }
+  setBoss(x, y, hp = 5) { this.boss = { x, y, hp }; return this; }
   setAxe(x, y) { this.axe = { x, y }; return this; }
-  setPrincess(x, y) { this.princess = { x, y }; return this; }
+  setPrincess(x, y, who = 'princess') { this.princess = { x, y, who }; return this; }
   flag(x) { this.flagX = x; this.set(x, 2, 'X'); return this; }
   castle(x) { this.castleX = x; return this; }
   done() { return this; }
@@ -351,8 +353,215 @@ const LEVELS = [
       b.enemy('goomba', 116).enemy('goomba', 118);
       b.bridge(126, 140, 1);
       b.ground(141, 159);
-      b.setBoss(136, 2).setAxe(141, 2).setPrincess(152, 2);
+      b.setBoss(136, 2).setAxe(141, 2).setPrincess(152, 2, 'toad');
       b.mid = 77;
+      return b.done();
+    },
+  },
+  // ======================= WORLD 4 =======================
+  {
+    name: '4-1', title: 'CANDY KINGDOM', hint: 'BOUNCE ON THE JELLY BLOCKS - HOLD JUMP TO GO HIGHER!',
+    build() {
+      const b = new LevelBuilder(200, 'candy', '4-1');
+      b.ground(0, 44).ground(48, 79).ground(86, 118).ground(124, 158).ground(163, 199);
+      b.blocks(12, 5, 'B?M?B');
+      b.enemy('goomba', 18).enemy('goomba', 19.5);
+      b.blocks(24, 2, 'J');
+      b.fill(26, 31, 10, 10, 'X').coinRow(26, 11, 6).enemy('red', 29, 11);
+      b.coinRow(33, 6, 3);
+      b.pipe(38, 2);
+      b.enemy('koopa', 41);
+      b.coinRow(45, 6, 3);
+      b.blocks(52, 5, 'BBBB').blocks(53, 9, '?S?');
+      b.enemy('goomba', 56).enemy('goomba', 57.5);
+      b.pipe(62, 3, true);
+      b.blocks(68, 2, 'J');
+      b.fill(70, 76, 10, 10, 'B').coinRow(70, 11, 7).enemy('red', 73, 11);
+      b.blocks(78, 2, 'J').coinRow(81, 9, 4);
+      b.blocks(90, 5, '?M?');
+      b.enemy('koopa', 95).enemy('goomba', 98).enemy('goomba', 99.5);
+      b.stairsUp(102, 3).blocks(106, 5, 'J');
+      b.fill(108, 114, 12, 12, 'X').coinRow(108, 13, 7);
+      b.pipe(116, 2, true);
+      b.coinRow(119, 7, 5);
+      b.blocks(128, 5, 'BCB').blocks(132, 9, 'BLB');
+      b.enemy('spiny', 134).enemy('spiny', 137);
+      b.blocks(140, 2, 'JJJ').coinRow(140, 12, 3);
+      b.enemy('goomba', 148).enemy('goomba', 149.5).enemy('red', 152);
+      b.blocks(157, 2, 'J').coinRow(159, 8, 4);
+      b.blocks(166, 5, 'B?B');
+      b.stairsUp(172, 8).column(180, 8);
+      b.flag(188).castle(192);
+      b.mid = 86;
+      return b.done();
+    },
+  },
+  {
+    name: '4-2', title: 'CRYSTAL CAVERNS', hint: 'IT IS DARK DOWN HERE... STAY CLOSE TO THE CRYSTALS',
+    build() {
+      const b = new LevelBuilder(196, 'crystal', '4-2', { dark: true });
+      b.ground(0, 50).ground(54, 88).ground(93, 130).ground(136, 195);
+      b.fill(0, 0, 2, 12, 'B');
+      b.fill(6, 150, 13, 13, 'B');
+      b.blocks(10, 5, 'M?B?');
+      b.enemy('goomba', 16).enemy('goomba', 17.5);
+      b.pipe(22, 2, true);
+      b.column(28, 2).column(30, 3).column(32, 4);
+      b.coinRow(28, 8, 5);
+      b.enemy('spiny', 36).enemy('spiny', 39);
+      b.blocks(42, 6, 'BBBBB').blocks(43, 10, '?S?');
+      b.lift(50, 4, 3, 'x', 2, 1.3);
+      b.enemy('koopa', 60);
+      b.fill(64, 65, 2, 4, 'X').fill(64, 65, 9, 12, 'X').coinRow(64, 6, 2);
+      b.blocks(70, 5, 'B?B?B');
+      b.enemy('goomba', 72).enemy('goomba', 73.5).enemy('goomba', 75);
+      b.pipe(80, 3, true).pipe(85, 2);
+      b.lift(89, 3, 3, 'y', 2.5, 1.2).coinRow(89, 8, 3);
+      b.blocks(98, 6, 'BLB');
+      b.enemy('red', 104).enemy('spiny', 108).enemy('spiny', 110);
+      b.stairsUp(114, 4).stairsDown(118, 4);
+      b.blocks(124, 5, '?M?');
+      b.lift(131, 4, 3, 'x', 2.2, 1.4);
+      b.enemy('koopa', 140).enemy('goomba', 145).enemy('goomba', 146.5);
+      b.pipe(150, 4, true);
+      b.blocks(156, 5, 'BCB');
+      b.enemy('spiny', 160);
+      b.stairsUp(166, 8).column(174, 8);
+      b.flag(182).castle(186);
+      b.mid = 93;
+      return b.done();
+    },
+  },
+  {
+    name: '4-3', title: 'SKY AIRSHIP ARMADA', hint: 'STRONG WIND GUSTS! KEEP RUNNING FORWARD',
+    build() {
+      const b = new LevelBuilder(200, 'airship', '4-3', { wind: true });
+      b.ground(0, 30).ground(35, 62).ground(67, 70).ground(75, 100).ground(105, 108).ground(113, 140).ground(146, 170).ground(175, 199);
+      b.blocks(10, 5, '?M?');
+      b.cannon(18, 2);
+      b.enemy('goomba', 24).enemy('goomba', 25.5);
+      b.coinRow(31, 6, 4);
+      b.column(40, 2).column(41, 3);
+      b.cannon(48, 3);
+      b.enemy('koopa', 54);
+      b.blocks(56, 6, 'BSB');
+      b.coinRow(63, 7, 4).coinRow(71, 7, 4);
+      b.cannon(78, 2).cannon(86, 4);
+      b.enemy('red', 92).enemy('goomba', 96);
+      b.lift(101, 4, 3, 'x', 1.5, 1.2);
+      b.coinRow(109, 7, 4);
+      b.blocks(116, 5, 'B?B?B').blocks(118, 9, 'L');
+      b.cannon(124, 3);
+      b.enemy('spiny', 128).enemy('spiny', 131);
+      b.cannon(136, 2);
+      b.lift(141, 4, 3, 'y', 2, 1.1);
+      b.enemy('koopa', 150).enemy('goomba', 156).enemy('goomba', 157.5);
+      b.blocks(152, 5, '?M?');
+      b.cannon(162, 3);
+      b.coinRow(171, 7, 4);
+      b.stairsUp(178, 6).column(184, 6);
+      b.flag(190).castle(194);
+      b.mid = 105;
+      return b.done();
+    },
+  },
+  // ======================= WORLD 5 =======================
+  {
+    name: '5-1', title: 'JUNGLE RUINS', hint: 'CRACKED STONES CRUMBLE - DON’T STAND STILL!',
+    build() {
+      const b = new LevelBuilder(208, 'jungle', '5-1');
+      b.ground(0, 36).ground(42, 70).ground(78, 104).ground(110, 140).ground(148, 172).ground(177, 207);
+      b.blocks(12, 5, 'B?B');
+      b.enemy('goomba', 17).enemy('goomba', 18.5);
+      b.pipe(24, 3, true);
+      b.blocks(30, 5, '?M?');
+      b.enemy('koopa', 34);
+      b.blocks(37, 1, 'DDDDD').coinRow(37, 6, 5);
+      b.enemy('goomba', 48).enemy('goomba', 50);
+      b.blocks(54, 6, 'BBCBB');
+      b.pipe(60, 4, true);
+      b.stairsUp(64, 3);
+      b.blocks(71, 5, 'DD').blocks(74, 6, 'DD').coinRow(71, 8, 2).coinRow(74, 9, 2);
+      b.enemy('red', 84).enemy('spiny', 90).enemy('spiny', 92);
+      b.blocks(86, 5, 'B?B');
+      b.pipe(97, 2, true);
+      b.blocks(105, 1, 'DDDDD').coinRow(105, 5, 5);
+      b.blocks(114, 5, '?S?');
+      b.enemy('koopa', 118).enemy('goomba', 122).enemy('goomba', 123.5);
+      b.column(128, 4).blocks(129, 5, 'DDDD').column(133, 4).coinRow(129, 7, 4);
+      b.enemy('goomba', 136);
+      b.blocks(141, 4, 'DD').blocks(144, 6, 'DD').coinRow(144, 8, 2);
+      b.blocks(152, 5, 'BMB');
+      b.enemy('spiny', 156).enemy('koopa', 160);
+      b.pipe(164, 3, true);
+      b.blocks(173, 1, 'DDDD');
+      b.stairsUp(182, 8).column(190, 8);
+      b.flag(196).castle(200);
+      b.mid = 110;
+      return b.done();
+    },
+  },
+  {
+    name: '5-2', title: 'MOUNT INFERNO', hint: 'METEORS INCOMING! WATCH FOR THE RED TARGETS',
+    build() {
+      const b = new LevelBuilder(202, 'volcano', '5-2', { meteors: true });
+      b.ground(0, 34).ground(39, 66).ground(71, 100).ground(106, 134).ground(139, 168).ground(173, 201);
+      b.podoboo(36.5).podoboo(68.5).podoboo(103).podoboo(136.5).podoboo(170.5);
+      b.blocks(12, 5, '?M?');
+      b.enemy('goomba', 18).enemy('goomba', 19.5);
+      b.column(26, 2).column(27, 3);
+      b.enemy('spiny', 30);
+      b.blocks(44, 6, 'B?B?B');
+      b.enemy('koopa', 50).enemy('spiny', 56);
+      b.pipe(60, 3, true);
+      b.firebar(78, 5, 4, 1.6);
+      b.enemy('goomba', 84).enemy('goomba', 85.5);
+      b.blocks(88, 5, 'BSB');
+      b.stairsUp(94, 3);
+      b.blocks(112, 6, '?L?');
+      b.enemy('spiny', 116).enemy('spiny', 119).enemy('red', 124);
+      b.cannon(128, 2);
+      b.firebar(146, 5, 5, -1.5);
+      b.blocks(150, 9, 'BMB');
+      b.enemy('koopa', 154).enemy('goomba', 160).enemy('goomba', 161.5);
+      b.pipe(164, 2, true);
+      b.stairsUp(178, 8).column(186, 8);
+      b.flag(192).castle(196);
+      b.mid = 106;
+      return b.done();
+    },
+  },
+  {
+    name: '5-3', title: "BOWSER'S DARK FORTRESS", hint: 'THE FINAL BATTLE - BOWSER IS STRONGER THAN EVER!',
+    build() {
+      const b = new LevelBuilder(172, 'fortress', '5-3');
+      b.fill(0, 171, 13, 13, 'X');
+      b.start = { x: 2, y: 5 };
+      b.ground(0, 14).fill(0, 5, 2, 4, 'X').fill(6, 8, 2, 3, 'X').fill(9, 10, 2, 2, 'X');
+      b.podoboo(16.5);
+      b.ground(19, 36);
+      b.firebar(24, 5, 6, 2).firebar(32, 5, 6, -2);
+      b.blocks(28, 9, '?M?');
+      b.podoboo(38).podoboo(40.5);
+      b.ground(42, 64).fill(42, 48, 2, 3, 'X');
+      b.firebar(55, 6, 6, 1.7);
+      b.enemy('koopa', 60).enemy('goomba', 51);
+      b.fill(58, 64, 9, 12, 'X');
+      b.fill(67, 67, 0, 4, 'X');
+      b.podoboo(65.5).podoboo(68.5);
+      b.ground(70, 98);
+      b.firebar(76, 5, 5, 2.2).firebar(84, 7, 6, -1.5).firebar(92, 5, 5, 2.2);
+      b.blocks(80, 10, 'B?B').blocks(88, 10, 'M');
+      b.enemy('spiny', 88).enemy('koopa', 95);
+      b.podoboo(100.5);
+      b.ground(102, 137);
+      b.fill(106, 108, 2, 4, 'X').firebar(107, 5, 6, 1.3);
+      b.enemy('goomba', 114).enemy('goomba', 116).enemy('red', 120);
+      b.firebar(128, 8, 4, -2.4);
+      b.bridge(138, 152, 1);
+      b.ground(153, 171);
+      b.setBoss(148, 2, 8).setAxe(153, 2).setPrincess(164, 2);
+      b.mid = 70;
       return b.done();
     },
   },

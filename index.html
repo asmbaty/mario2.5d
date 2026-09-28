@@ -27,13 +27,16 @@
     <div class="l2">MARIO BROS.</div>
     <div class="l3">2.5D</div>
   </div>
-  <div class="select"><button id="sel-prev">◀</button><span id="sel-name">WORLD 1-1 · GRASSLAND</span><button id="sel-next">▶</button></div>
+  <div id="levelsel">
+    <div class="ls-title">★ SECRET LEVEL SELECT ★</div>
+    <div class="ls-grid" id="ls-grid"></div>
+    <div class="ls-hint">ARROWS CHOOSE · ENTER START</div>
+  </div>
   <div class="blink" id="press-start">PRESS ENTER OR TAP TO START</div>
   <div class="controls">
     <div>← → / A D &nbsp; MOVE</div>
     <div>SPACE / Z / ↑ &nbsp; JUMP</div>
     <div>SHIFT / X &nbsp; RUN · FIREBALL</div>
-    <div>← → ON THIS SCREEN: CHOOSE LEVEL</div>
     <div>P PAUSE &nbsp;·&nbsp; M MUTE</div>
   </div>
   <div class="top" id="top-score">TOP - 000000</div>
@@ -68,6 +71,7 @@
 <script src="js/models2.js"></script>
 <script src="js/decor.js"></script>
 <script src="js/details.js"></script>
+<script src="js/worlds45.js"></script>
 <script src="js/levels.js"></script>
 <script src="js/game.js"></script>
 </body>

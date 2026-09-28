@@ -197,13 +197,95 @@ const TEX = (() => {
     tree: '#35b04a', treeLight: '#7ee07a', treeDark: '#1f7a30', stone: true,
   };
   PALETTES.under.stone = true;
+  PALETTES.candy = {
+    base: '#f08cc0', mortar: '#8a2a5a', light: '#ffd0ea', dark: '#d060a0',
+    usedBase: '#c890a8', usedDark: '#6a3050',
+    hardBase: '#80e0c8', hardLight: '#d0fff0', hardDark: '#30a088',
+    dirt: '#6a3a22', dirtDark: '#4a2412', dirtLight: '#ff80c0',
+    grass: '#ffa8d4', grassLight: '#ffe6f4', grassDark: '#ff78b8',
+    tree: '#fff0f6', treeLight: '#ffffff', treeDark: '#ff9ccc', ownCastle: true,
+  };
+  PALETTES.crystal = {
+    base: '#5a4a8a', mortar: '#140c28', light: '#8a7ac0', dark: '#3a2a68',
+    usedBase: '#4a4058', usedDark: '#1a1424',
+    hardBase: '#4a5a9a', hardLight: '#8aa0e0', hardDark: '#1a2048',
+    dirt: '#2e2a4a', dirtDark: '#16142a', dirtLight: '#4a4470',
+    grass: '#2e2a4a', grassLight: '#4a4470',
+    tree: '#6a5ab0', treeLight: '#a090f0', treeDark: '#3a2a70', stone: true, ownCastle: true,
+  };
+  PALETTES.airship = {
+    base: '#a0683a', mortar: '#3a1e0a', light: '#d09860', dark: '#7a4820',
+    usedBase: '#8a6a4a', usedDark: '#3a2410',
+    hardBase: '#8a8e98', hardLight: '#d0d4dc', hardDark: '#3a3e48',
+    dirt: '#6a4424', dirtDark: '#4a2c14', dirtLight: '#8a5c34',
+    grass: '#c8904e', grassLight: '#e8b070', grassDark: '#a07038',
+    tree: '#c8904e', treeLight: '#e8b070', treeDark: '#8a5a28', planks: true,
+  };
+  PALETTES.jungle = {
+    base: '#8a8a6a', mortar: '#2a2a1a', light: '#b0b090', dark: '#5a5a40',
+    usedBase: '#6a6048', usedDark: '#2a2414',
+    hardBase: '#6a7a50', hardLight: '#a0b078', hardDark: '#384828',
+    dirt: '#5a3a20', dirtDark: '#3a2410', dirtLight: '#7a5430',
+    grass: '#2e9a30', grassLight: '#6ad050', grassDark: '#1e6a20',
+    tree: '#2a8a3a', treeLight: '#5ac060', treeDark: '#16582a',
+  };
+  PALETTES.volcano = {
+    base: '#4a3a3a', mortar: '#1a0a0a', light: '#7a6060', dark: '#2a1e1e',
+    usedBase: '#5a4038', usedDark: '#1e1210',
+    hardBase: '#3a3040', hardLight: '#6a5a78', hardDark: '#15101a',
+    dirt: '#3a2a28', dirtDark: '#1e1412', dirtLight: '#ff5a1a',
+    grass: '#5a4a48', grassLight: '#7a6a66', grassDark: '#3a2e2c',
+    tree: '#35b04a', treeLight: '#7ee07a', treeDark: '#1f7a30', ownCastle: true,
+  };
+  PALETTES.fortress = {
+    base: '#5a4a6a', mortar: '#1a1020', light: '#8a7a9a', dark: '#3a2a48',
+    usedBase: '#5a4a50', usedDark: '#20161e',
+    hardBase: '#4a4058', hardLight: '#7a6a90', hardDark: '#221a2c',
+    dirt: '#4a3e58', dirtDark: '#2a2034', dirtLight: '#6a5a7a',
+    grass: '#4a3e58', grassLight: '#6a5a7a',
+    tree: '#35b04a', treeLight: '#7ee07a', treeDark: '#1f7a30', stone: true, ownCastle: true,
+  };
+  ['haunted', 'moon', 'castle'].forEach(k => { PALETTES[k].ownCastle = true; });
+
+  function planks(p) {
+    return canvasTex(g => {
+      P(g, p.grass, 0, 0, 16, 16);
+      for (let r = 0; r < 4; r++) {
+        const y = r * 4, off = (r * 7) % 16;
+        P(g, p.grassLight, 0, y, 16, 1);
+        P(g, p.grassDark, 0, y + 3, 16, 1);
+        P(g, p.grassDark, off, y, 1, 4);
+        P(g, '#5a3a1a', (off + 2) % 16, y + 1); P(g, '#5a3a1a', (off + 13) % 16, y + 1);
+      }
+    });
+  }
+  // bouncy jelly block and cracked crumbling block
+  function jelly() {
+    return canvasTex(g => {
+      P(g, '#40d870', 0, 0, 16, 16);
+      P(g, '#8cffb0', 1, 1, 14, 3); P(g, '#20a050', 0, 13, 16, 3);
+      P(g, '#d8ffe4', 3, 2, 4, 1); P(g, '#d8ffe4', 2, 3, 1, 2);
+      for (const [x, y] of [[5, 7], [10, 6], [8, 10], [12, 10], [4, 11]]) P(g, '#b0ffc8', x, y, 2, 2);
+      P(g, '#107030', 0, 15, 16, 1); P(g, '#107030', 15, 0, 1, 16);
+    });
+  }
+  function crumble() {
+    return canvasTex(g => {
+      P(g, '#c89048', 0, 0, 16, 16);
+      P(g, '#f0c070', 0, 0, 16, 1); P(g, '#f0c070', 0, 0, 1, 16);
+      P(g, '#7a4a18', 0, 15, 16, 1); P(g, '#7a4a18', 15, 0, 1, 16);
+      const crack = [[3, 1], [4, 2], [4, 3], [5, 4], [6, 5], [6, 6], [7, 7], [9, 7], [10, 8], [11, 9], [11, 10], [12, 11], [13, 12], [6, 8], [5, 9], [5, 10], [4, 11], [3, 12], [9, 3], [10, 4], [8, 5]];
+      crack.forEach(([x, y]) => P(g, '#4a2808', x, y));
+      P(g, '#e8b060', 2, 6, 2, 1); P(g, '#e8b060', 11, 3, 2, 1);
+    });
+  }
 
   function mats(theme) {
     if (cache[theme]) return cache[theme];
     const p = PALETTES[theme];
     const std = (map, o = {}) => new THREE.MeshStandardMaterial({ map, roughness: 0.85, metalness: 0, ...o });
     const stoneStyle = !!p.stone;
-    const topTex = stoneStyle ? stone(p) : speckle(p.grass, p.grassLight, p.grassDark || '#2c9434', 5, 0.2);
+    const topTex = p.planks ? planks(p) : stoneStyle ? stone(p) : speckle(p.grass, p.grassLight, p.grassDark || '#2c9434', 5, 0.2);
     const qt = question();
     const m = {
       brick: std(brick(p)),
@@ -212,11 +294,13 @@ const TEX = (() => {
       hard: std(hard(p)),
       dirt: std(stoneStyle ? stone(p) : speckle(p.dirt, p.dirtDark, p.dirtLight, 11, 0.16)),
       grassTop: std(topTex, theme === 'snow' ? { roughness: 0.35, metalness: 0.05 } : {}),
-      grassSide: std(stoneStyle ? stone(p) : grassSide(p)),
+      grassSide: std(stoneStyle ? stone(p) : p.planks ? planks(p) : grassSide(p)),
       treeTop: std(treeTop(p)),
       treeSide: std(treeSide(p)),
       bark: std(bark()),
-      castle: std(brick(theme === 'haunted' || theme === 'moon' || theme === 'castle' ? p : PALETTES.over)),
+      castle: std(brick(p.ownCastle ? p : PALETTES.over)),
+      jelly: std(jelly(), { roughness: 0.15, metalness: 0.05, emissive: 0x20a050, emissiveIntensity: 0.35, transparent: true, opacity: 0.88 }),
+      crumble: std(crumble()),
     };
     m.grass = [m.grassSide, m.grassSide, m.grassTop, m.dirt, m.grassSide, m.grassSide];
     m.tree = [m.treeSide, m.treeSide, m.treeTop, m.treeSide, m.treeSide, m.treeSide];

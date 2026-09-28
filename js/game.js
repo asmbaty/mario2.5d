@@ -21,6 +21,12 @@
     reef: { bg: ['#1a7ab0', '#0a4a80', '#021a3a'], fog: 0x0a4a78, fogNear: 14, fogFar: 60, hemi: [0x80d0ff, 0x103050, 1.1], sun: [0xa0e0ff, 1.8], music: 'reef', point: 10, weather: 'bubbles' , dust: 0xd8f4ff },
     haunted: { bg: ['#05030e', '#1a1030', '#3a2050'], fog: 0x1a1030, fogNear: 20, fogFar: 80, hemi: [0x8070c0, 0x100818, 0.6], sun: [0xa0b0ff, 1.0], music: 'haunted', point: 20, weather: 'fireflies' , dust: 0x9080b8 },
     moon: { bg: ['#000004', '#020210', '#0a0a24'], fog: 0x05050c, fogNear: 60, fogFar: 220, hemi: [0xc0c8ff, 0x202028, 0.7], sun: [0xffffff, 2.6], music: 'moon', point: 0, weather: 'moondust', dust: 0xd0d0da },
+    candy: { bg: ['#ff8ac8', '#ffb8e0', '#ffe4f2'], fog: 0xffc8e6, fogNear: 34, fogFar: 120, hemi: [0xfff0f8, 0xa06080, 1.05], sun: [0xfff4f0, 2.0], music: 'candy', point: 0, weather: 'sprinkles', dust: 0xfff0f8 },
+    crystal: { bg: ['#02010a', '#0a0620', '#160c30'], fog: 0x0a0620, fogNear: 18, fogFar: 70, hemi: [0x6050a0, 0x100820, 0.35], sun: [0x8070ff, 0.45], music: 'crystal', point: 45, pointColor: 0xd8d0ff, weather: 'glitter', dust: 0xa090d0 },
+    airship: { bg: ['#40306a', '#d06a70', '#ffb070', '#ffe0b0'], fog: 0xffc0a0, fogNear: 40, fogFar: 150, hemi: [0xffe0c8, 0x6a4a6a, 1.15], sun: [0xffc890, 2.4], music: 'airship', point: 0, weather: 'wind', dust: 0xe8c8a0 },
+    jungle: { bg: ['#4a7a5a', '#8ab890', '#c8e0c0'], fog: 0x8ab098, fogNear: 25, fogFar: 90, hemi: [0xe0ffe0, 0x2a4a20, 1.1], sun: [0xfff0d0, 1.8], music: 'jungle', point: 0, weather: 'rain', dust: 0xa08a60 },
+    volcano: { bg: ['#1a0404', '#5a1408', '#b03a10'], fog: 0x4a1a10, fogNear: 30, fogFar: 110, hemi: [0xffa880, 0x3a1410, 1.15], sun: [0xffa070, 2.1], music: 'volcano', point: 14, weather: 'ash', lava: true, dust: 0x6a5a58 },
+    fortress: { bg: ['#06020e', '#1a0830', '#300a40'], fog: 0x1a0828, fogNear: 30, fogFar: 90, hemi: [0xb080ff, 0x180818, 0.65], sun: [0xc090ff, 1.0], music: 'fortress', point: 14, weather: 'spirits', lava: true, dust: 0x8a7a9a },
     castle: { bg: ['#100000', '#300808', '#501008'], fog: 0x200404, fogNear: 30, fogFar: 90, hemi: [0xff9070, 0x200808, 0.7], sun: [0xff9060, 1.0], music: 'castle', point: 14, weather: 'embers', lava: true , dust: 0x9a8a80 },
   };
 
@@ -79,14 +85,20 @@
   };
   function press(k) { if (!keys[k]) pressed[k] = true; keys[k] = true; }
   function release(k) { keys[k] = false; }
+  const raw = {};
   window.addEventListener('keydown', e => {
+    raw[e.code] = true;
+    if (raw.KeyB && raw.KeyN && raw.KeyM) unlockSelect();
+    if (G.state === 'title' && G.selectOpen && !e.repeat && (e.code === 'ArrowUp' || e.code === 'ArrowDown')) {
+      e.preventDefault(); changeSelect(e.code === 'ArrowUp' ? -3 : 3); return;
+    }
     const k = KEYMAP[e.code]; if (!k) return;
     e.preventDefault();
     SFX.init();
     if (!e.repeat) press(k); else keys[k] = true;
   });
-  window.addEventListener('keyup', e => { const k = KEYMAP[e.code]; if (k) { e.preventDefault(); release(k); } });
-  window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+  window.addEventListener('keyup', e => { raw[e.code] = false; const k = KEYMAP[e.code]; if (k) { e.preventDefault(); release(k); } });
+  window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; for (const k in raw) raw[k] = false; });
 
   if ('ontouchstart' in window || navigator.maxTouchPoints > 0) document.body.classList.add('touch');
   document.querySelectorAll('#touch button').forEach(btn => {
@@ -133,6 +145,7 @@
     hemi.color.setHex(th.hemi[0]); hemi.groundColor.setHex(th.hemi[1]); hemi.intensity = th.hemi[2];
     sun.color.setHex(th.sun[0]); sun.intensity = th.sun[1];
     pLight.intensity = th.point;
+    pLight.color.setHex(th.pointColor || 0xffc890);
   }
 
   function loadLevel(idx, fromMid) {
@@ -150,7 +163,7 @@
       flagX: def.flagX, castleX: def.castleX, flag: null, castle: null, clouds: [],
       cannons: [], firebars: [], bridge: [], anims: [], weather: null, boss: null, axe: null, princess: null,
       phys: {
-        water: def.water, ice: def.ice,
+        water: def.water, ice: def.ice, wind: def.wind, meteors: def.meteors,
         g: def.lowgrav ? 0.5 : 1, jump: def.lowgrav ? 0.85 : 1, fall: def.lowgrav ? 0.6 : 1,
       },
     };
@@ -168,6 +181,7 @@
     }
     if (def.boss) {
       const b = spawnEnemy('bowser', def.boss.x, def.boss.y);
+      b.hp = def.boss.hp || 5;
       L.boss = b;
     }
     if (def.axe) {
@@ -177,11 +191,12 @@
       L.axe = { x: def.axe.x, y: def.axe.y, w: 1, h: 1.6, m };
     }
     if (def.princess) {
-      const m = MODELS.princess();
+      const who = def.princess.who || 'princess';
+      const m = who === 'toad' ? MODELS.toad() : MODELS.princess();
       m.root.position.set(def.princess.x + 0.5, def.princess.y, 0);
       m.root.rotation.y = -0.6;
       world.add(m.root);
-      L.princess = { x: def.princess.x, m };
+      L.princess = { x: def.princess.x, m, who };
     }
     if (th.weather) L.weather = DECOR.weather(th.weather, world, P.x);
     for (const c of def.coins) {
@@ -216,6 +231,7 @@
     camX = Math.max(halfW, P.x);
     clampCam();
     G.time = 400; G.timeAcc = 0; G.hurried = false; G.freeze = 0;
+    G.windT = 0; DECOR.gust = 0; L.meteorT = 3;
   }
 
   function buildStatic() {
@@ -266,12 +282,13 @@
       world.add(im);
     };
     // visual-only ground extending past both level edges
-    if (L.theme !== 'sky') for (let i = 1; i <= 24; i++) {
+    const floating = L.theme === 'sky' || L.theme === 'airship';
+    if (!floating) for (let i = 1; i <= 24; i++) {
       if (grid[1][0] === '#') { lists.grass.push([-i, 1]); lists.dirt.push([-i, 0]); }
       if (grid[1][w - 1] === '#') { lists.grass.push([w - 1 + i, 1]); lists.dirt.push([w - 1 + i, 0]); }
     }
     // deep earth under each run of ground so the world doesn't float
-    for (let x = 0; x < w;) {
+    if (!floating) for (let x = 0; x < w;) {
       if (grid[0][x] !== '#') { x++; continue; }
       let x2 = x; while (x2 < w && grid[0][x2] === '#') x2++;
       const x0 = x === 0 ? -24 : x, x1 = x2 === w ? w + 24 : x2;
@@ -339,6 +356,8 @@
       case 'B': case 'C': return T.brick;
       case '?': case 'M': case 'S': case 'L': return T.q;
       case 'U': return T.used;
+      case 'J': return T.jelly;
+      case 'D': return T.crumble;
       default: return T.hard;
     }
   }
@@ -485,12 +504,16 @@
       case 'flame':
         e = { kind, x, y, w: 1.1, h: 0.45, m: MODELS.flame(), free: true, fireproof: true, starproof: true, targetY: y };
         break;
+      case 'meteor':
+        e = { kind, x, y, w: 0.8, h: 0.8, m: MODELS.meteor(), free: true, fireproof: true, starproof: true };
+        base.vx = -2.5; base.vy = -10; base.active = true;
+        break;
       case 'bowser':
         e = { kind, x, y, w: 1.7, h: 2.1, m: MODELS.bowser(), boss: true, starproof: true, hp: 5, homeX: x, fireT: 2.5, jumpT: 3, hurtT: 0 };
         base.vx = -1;
         break;
     }
-    Object.assign(e, base, { vx: base.vx });
+    Object.assign(e, base, { vx: base.vx, vy: base.vy });
     if (e.m.root) e.m.root.traverse(o => { if (o.isMesh && o.castShadow === undefined) o.castShadow = true; });
     world.add(e.m.root);
     L.enemies.push(e);
@@ -498,6 +521,19 @@
   }
 
 
+  function boxSolid(x, y, w, h) {
+    for (let ty = Math.floor(y + 0.01); ty <= Math.floor(y + h - 0.01); ty++)
+      for (let tx = Math.floor(x + 0.01); tx <= Math.floor(x + w - 0.01); tx++)
+        if (tx >= 0 && tx < L.w && solidAt(tx, ty)) return true;
+    return false;
+  }
+  // projectiles pop when their nose enters a solid tile (cannons themselves excepted)
+  function hitsWall(e) {
+    const tx = Math.floor(e.x + (e.vx > 0 ? e.w : 0)), ty = Math.floor(e.y + e.h / 2);
+    if (tx < 0 || tx >= L.w || ty < 0 || ty >= L.h) return false;
+    const c = L.grid[ty][tx];
+    return c !== ' ' && c !== 'K';
+  }
   function overlap(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
 
   function moveBody(b) {
@@ -516,7 +552,7 @@
     const x0 = Math.floor(b.x + 0.001), x1 = Math.floor(b.x + b.w - 0.001);
     if (b.vy <= 0) {
       const ty = Math.floor(b.y);
-      for (let tx = x0; tx <= x1; tx++) if (solidAt(tx, ty)) { b.y = ty + 1; b.vy = 0; b.onGround = true; break; }
+      for (let tx = x0; tx <= x1; tx++) if (solidAt(tx, ty)) { b.y = ty + 1; b.vy = 0; b.onGround = true; r.floor = { x: tx, y: ty }; break; }
     } else {
       const ty = Math.floor(b.y + b.h);
       let best = null, bd = 9;
@@ -793,7 +829,21 @@
     p.prevY = p.y;
     const wasGround = p.onGround;
     if (!p.onGround) p.airVy = Math.min(p.airVy || 0, p.vy); else p.airVy = 0;
+    // wind gusts shove Mario backwards (applied as a temporary velocity so walls still collide)
+    const windV = ph.wind ? -DECOR.gust * (p.onGround ? 2 : 2.8) : 0;
+    p.vx += windV;
     const r = moveBody(p);
+    if (!r.hitX) p.vx -= windV;
+    if (r.floor && !ph.water) {
+      const fb = L.blocks.get(key(r.floor.x, r.floor.y));
+      if (fb && fb.type === 'J') {
+        // jelly spring: hold jump for a super bounce
+        p.vy = (keys.jump ? 25 : 21) * ph.jump; p.onGround = false; p.coyote = 0;
+        fb.jelly = 1; p.sq = -0.3;
+        sparkle(fb.x + 0.5, fb.y + 1, 5, 0x80ffb0, 3, 0.45);
+        SFX.fx.spring();
+      } else if (fb && fb.type === 'D' && !fb.crumbleT) { fb.crumbleT = DT; SFX.fx.crumble(); }
+    }
     const minX = camX - halfW + 0.2;
     if (p.x < minX) { p.x = minX; if (p.vx < 0) p.vx = 0; }
     if (r.hitX) p.vx = 0;
@@ -896,12 +946,17 @@
   function updateSpecial(e) {
     const pc = P.x + P.w / 2, ec = e.x + e.w / 2;
     switch (e.kind) {
-      case 'fish':
-        e.x += e.vx * DT;
-        e.y = e.baseY + Math.sin(e.anim * 1.8 + e.baseY) * 0.8;
+      case 'fish': {
+        // swim a sine wave but never through reef rocks: turn around at walls, hold depth at ceilings/floors
+        const stuck = boxSolid(e.x, e.y, e.w, e.h);
+        const nx = e.x + e.vx * DT;
+        if (!stuck && boxSolid(nx, e.y, e.w, e.h)) e.vx = -e.vx; else e.x = nx;
+        const ny = e.baseY + Math.sin(e.anim * 1.8 + e.baseY) * 0.8;
+        if (stuck || !boxSolid(e.x, ny, e.w, e.h)) e.y = ny;
         e.dir = Math.sign(e.vx) || -1;
         if (e.x < camX - halfW - 4) e.remove = true;
         break;
+      }
       case 'boo': {
         const py = P.y + P.h / 2, by = e.y + e.h / 2;
         e.dir = pc < ec ? -1 : 1;
@@ -914,12 +969,14 @@
           const sp = Math.hypot(e.vx, e.vy);
           if (sp > 1.8) { e.vx *= 1.8 / sp; e.vy *= 1.8 / sp; }
         }
-        e.x += e.vx * DT; e.y += e.vy * DT;
+        if (boxSolid(e.x + e.vx * DT, e.y, e.w, e.h)) e.vx = 0; else e.x += e.vx * DT;
+        if (boxSolid(e.x, e.y + e.vy * DT, e.w, e.h)) e.vy = 0; else e.y += e.vy * DT;
         break;
       }
       case 'bullet':
         e.x += e.vx * DT;
         e.dir = Math.sign(e.vx);
+        if (hitsWall(e)) { e.remove = true; puff(e.x + e.w / 2, e.y + e.h / 2, 0x888888); SFX.fx.bump(); break; }
         if (Math.abs(e.x - camX) > halfW + 12) e.remove = true;
         break;
       case 'piranha': {
@@ -945,11 +1002,36 @@
       }
       case 'flame':
         e.x += e.vx * DT;
+        if (hitsWall(e)) { e.remove = true; puff(e.x + e.w / 2, e.y + e.h / 2, 0xff8020); break; }
         e.y += Math.sign(e.targetY - e.y) * Math.min(Math.abs(e.targetY - e.y), 1.5 * DT);
         if (Math.abs(e.x - camX) > halfW + 6) e.remove = true;
         break;
+      case 'meteor':
+        e.x += e.vx * DT; e.y += e.vy * DT;
+        if (e.y < 0.6 || boxSolid(e.x + 0.1, e.y, e.w - 0.2, e.h * 0.5)) {
+          e.remove = true;
+          const cx = e.x + e.w / 2;
+          puff(cx, e.y + 0.3, 0xff7020); puff(cx, e.y + 0.6, 0x503030);
+          dust(cx, e.y + 0.2, 8, 2.2, 1.2, 0x6a5048);
+          sparkle(cx, e.y + 0.5, 8, 0xffa040, 5, 0.5);
+          if (Math.abs(cx - camX) < halfW + 2) { shake(0.28); SFX.fx.boom(); }
+        }
+        break;
       case 'bowser': updateBowser(e); break;
     }
+  }
+  function spawnMeteor() {
+    const tx = Math.floor(Math.min(L.flagX - 8, Math.max(camX - halfW + 3, P.x + P.vx * 1.1 + (Math.random() - 0.35) * 9)));
+    let gy = -1;
+    for (let y = L.h - 2; y >= 0; y--) if (solidAt(tx, y)) { gy = y + 1; break; }
+    const fall = 16;
+    spawnEnemy('meteor', tx + 0.1 + 4, Math.max(gy, 1) + fall);
+    const ring = new THREE.Mesh(MODELS.geo('mRing', () => new THREE.RingGeometry(0.35, 0.55, 24).rotateX(-Math.PI / 2)),
+      new THREE.MeshBasicMaterial({ color: 0xff2010, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide }));
+    ring.position.set(tx + 0.5, Math.max(gy, 1.1) + 0.03, 0);
+    world.add(ring);
+    L.fx.push({ type: 'marker', m: ring, t: 0, life: fall / 10 });
+    SFX.fx.meteor();
   }
 
   function updateBowser(e) {
@@ -1139,7 +1221,31 @@
     }
   }
   function updateBlocks() {
-    for (const b of L.blocks.values()) if (b.bump > 0) b.bump = Math.max(0, b.bump - DT);
+    for (const b of L.blocks.values()) {
+      if (b.bump > 0) b.bump = Math.max(0, b.bump - DT);
+      if (b.jelly > 0) b.jelly = Math.max(0, b.jelly - DT * 1.6);
+      if (!b.crumbleT) continue;
+      if (!b.fallen) {
+        b.crumbleT += DT;
+        if (b.crumbleT > 0.55) {
+          // give way: drop out of the grid and tumble into the pit
+          b.fallen = true; b.fy = b.y; b.fvy = 0; b.respawnT = 0;
+          L.grid[b.y][b.x] = ' ';
+          dust(b.x + 0.5, b.y, 4, 1, 0.3, 0xd8b070);
+        }
+      } else {
+        b.fvy -= 30 * DT; b.fy += b.fvy * DT;
+        b.mesh.visible = b.fy > -4;
+        b.respawnT += DT;
+        const zone = { x: b.x, y: b.y, w: 1, h: 1 };
+        if (b.respawnT > 6 && !overlap(zone, P)) {
+          b.fallen = false; b.crumbleT = 0; b.mesh.visible = true;
+          b.mesh.rotation.set(0, 0, 0);
+          L.grid[b.y][b.x] = 'D';
+          puff(b.x + 0.5, b.y + 0.5, 0xf0d090);
+        }
+      }
+    }
   }
   function updateFx() {
     for (const f of L.fx) {
@@ -1165,6 +1271,10 @@
         f.vy -= 45 * DT;
         f.m.position.x += f.vx * DT; f.m.position.y += f.vy * DT; f.m.position.z += f.vz * DT;
         f.m.rotation.x += 8 * DT; f.m.rotation.z += 6 * DT;
+      } else if (f.type === 'marker') {
+        const k = f.t / f.life;
+        f.m.scale.setScalar(1.6 - k * 0.8 + Math.sin(f.t * 20) * 0.08);
+        f.m.material.opacity = 0.35 + k * 0.6;
       } else if (f.type === 'puff') {
         const s = 1 + f.t * 6; f.m.scale.setScalar(s); f.m.material.opacity = 0.9 * (1 - f.t / f.life);
       } else if (f.type === 'spark') {
@@ -1219,8 +1329,30 @@
     setTimeout(() => { fn(); el.className = ''; }, 680);
   }
   function updateSelect() {
-    const lv = LEVELS[G.startIdx];
-    $('sel-name').textContent = 'WORLD ' + lv.name + ' · ' + lv.title;
+    document.querySelectorAll('#ls-grid button').forEach((b, i) => b.classList.toggle('on', i === G.startIdx));
+  }
+  function unlockSelect() {
+    if (G.state !== 'title' || G.selectOpen) return;
+    G.selectOpen = true;
+    // undo a mute toggled by the M of this key combo
+    if (G.muteAt != null && G.t - G.muteAt < 1.5) { SFX.toggleMute(); G.muteAt = null; }
+    const grid = $('ls-grid');
+    grid.innerHTML = '';
+    LEVELS.forEach((lv, i) => {
+      const def = lv.build(), bg = THEMES[def.theme].bg;
+      const b = document.createElement('button');
+      b.innerHTML = '<b>' + lv.name + '</b><span>' + lv.title + '</span>';
+      b.style.background = 'linear-gradient(160deg, ' + bg.join(', ') + ')';
+      b.addEventListener('pointerdown', e => {
+        e.stopPropagation(); SFX.init();
+        if (G.state !== 'title') return;
+        if (G.startIdx === i) newGame(); else changeSelect(i - G.startIdx);
+      });
+      grid.appendChild(b);
+    });
+    $('title').classList.add('cheat');
+    updateSelect();
+    SFX.fx.oneup();
   }
   function changeSelect(d) {
     G.startIdx = (G.startIdx + d + LEVELS.length) % LEVELS.length;
@@ -1400,8 +1532,13 @@
       P.anim += Math.abs(P.vx) * DT * 1.7;
     } else if (G.bcPhase === 'thanks') {
       if (G.bcT > 0.5 && G.time > 0) { for (let i = 0; i < 3 && G.time > 0; i++) { G.time--; G.score += 50; } if (Math.floor(G.bcT * 60) % 3 === 0) SFX.fx.tick(); }
-      if (G.bcT > 1 && Math.floor(G.bcT * 2) !== Math.floor((G.bcT - DT) * 2)) firework(L.princess.x + (Math.random() - 0.5) * 10, 8 + Math.random() * 3);
-      if (G.bcT > 9) { $('toast').classList.remove('show'); winGame(); }
+      const toad = L.princess.who === 'toad';
+      if (!toad && G.bcT > 1 && Math.floor(G.bcT * 2) !== Math.floor((G.bcT - DT) * 2)) firework(L.princess.x + (Math.random() - 0.5) * 10, 8 + Math.random() * 3);
+      if (toad && G.bcT > 6.5 && !G.bcDone) {
+        G.bcDone = true;
+        irisTo(() => { $('toast').classList.remove('show'); G.reachedMid = false; startIntro(G.idx + 1); });
+      }
+      if (!toad && G.bcT > 9) { $('toast').classList.remove('show'); winGame(); }
     }
     moveBody(P);
     updateEnemies(); updateFx();
@@ -1411,6 +1548,13 @@
     clampCam();
   }
   function showThanks() {
+    G.bcDone = false;
+    if (L.princess.who === 'toad') {
+      $('toast').innerHTML = 'THANK YOU MARIO!<br><br>BUT OUR PRINCESS IS IN<br>ANOTHER CASTLE!';
+      $('toast').classList.add('show');
+      SFX.fx.toad();
+      return;
+    }
     $('toast').innerHTML = 'THANK YOU MARIO!<br><br>YOUR QUEST IS OVER.';
     $('toast').classList.add('show');
   }
@@ -1429,6 +1573,17 @@
     }
     if (P.inv > 0) P.inv -= DT;
     if (P.star > 0) { P.star -= DT; if (P.star <= 0) { P.star = 0; SFX.Music.play(L.th.music); } }
+    if (L.phys.wind) {
+      // 9 second cycle: calm, then a 3 second headwind gust
+      G.windT = (G.windT + DT) % 9;
+      const target = G.windT > 5.5 && G.windT < 8.5 ? 1 : 0;
+      if (target && DECOR.gust < 0.05 && G.windT < 5.6) SFX.fx.wind();
+      DECOR.gust += (target - DECOR.gust) * DT * 2.5;
+    }
+    if (L.phys.meteors && P.x > 12 && P.x < L.flagX - 12) {
+      L.meteorT -= DT;
+      if (L.meteorT <= 0) { L.meteorT = 1.7 + Math.random() * 1.8; spawnMeteor(); }
+    }
     updateLifts();
     updatePlayer();
     updateBlocks();
@@ -1454,8 +1609,8 @@
     G.t += DT;
     switch (G.state) {
       case 'title':
-        if (pressed.left) changeSelect(-1);
-        if (pressed.right) changeSelect(1);
+        if (G.selectOpen && pressed.left) changeSelect(-1);
+        if (G.selectOpen && pressed.right) changeSelect(1);
         break;
       case 'intro':
         G.timer -= DT;
@@ -1478,7 +1633,11 @@
   }
 
   function handleMeta() {
-    if (pressed.mute) { pressed.mute = false; SFX.toggleMute(); }
+    if (pressed.mute) {
+      pressed.mute = false;
+      // M is also part of the B+N+M secret, so don't toggle sound while the other two are held
+      if (!(raw.KeyB || raw.KeyN)) { SFX.toggleMute(); G.muteAt = G.t; }
+    }
     if (pressed.start) {
       pressed.start = false;
       if (G.state === 'title') { newGame(); return; }
@@ -1620,6 +1779,15 @@
     for (const b of L.blocks.values()) {
       const off = b.bump > 0 ? Math.sin((1 - b.bump / 0.2) * Math.PI) * 0.35 : 0;
       b.mesh.position.y = b.y + 0.5 + off;
+      if (b.type === 'J') {
+        const k = (b.jelly || 0) * Math.cos((1 - (b.jelly || 0)) * 22);
+        const idle = Math.sin(t * 4 + b.x) * 0.03;
+        b.mesh.scale.set(1 + k * 0.25 + idle, 1 - k * 0.35 - idle, 1 + k * 0.25 + idle);
+        b.mesh.position.y = b.y + 0.5 - k * 0.17;
+      } else if (b.crumbleT) {
+        if (b.fallen) { b.mesh.position.y = b.fy + 0.5; b.mesh.rotation.z += dt * 2; b.mesh.position.x = b.x + 0.5; }
+        else b.mesh.position.x = b.x + 0.5 + Math.sin(t * 70) * 0.05 * Math.min(1, b.crumbleT * 3);
+      }
     }
     for (const lf of L.lifts) lf.mesh.position.set(lf.x + lf.w / 2, lf.y + lf.h / 2, 0);
     L.T.q.emissiveIntensity = 0.12 + (Math.sin(t * 4) * 0.5 + 0.5) * 0.3;
@@ -1684,6 +1852,11 @@
       case 'flame':
         m.inner.rotation.y = e.dir > 0 ? 0 : Math.PI;
         m.inner.scale.set(1 + Math.sin(t * 40) * 0.08, 1 + Math.cos(t * 33) * 0.12, 1);
+        break;
+      case 'meteor':
+        m.rock.rotation.x += dt * 6; m.rock.rotation.y += dt * 4;
+        m.trail.rotation.z = -Math.atan2(-e.vx, -e.vy);
+        m.trail.scale.set(1 + Math.sin(t * 40) * 0.1, 1, 1);
         break;
       case 'bowser': {
         m.inner.rotation.y += ((e.dir > 0 ? -0.35 : Math.PI + 0.35) - m.inner.rotation.y) * 0.15;
@@ -1756,9 +1929,15 @@
   }
 
   // debug hook for automated testing
-  window.__game = { G, P, get L() { return L; }, keys, pressed, startIntro, loadLevel, setSize, changeSelect };
-  $('sel-prev').addEventListener('pointerdown', e => { e.stopPropagation(); SFX.init(); if (G.state === 'title') changeSelect(-1); });
-  $('sel-next').addEventListener('pointerdown', e => { e.stopPropagation(); SFX.init(); if (G.state === 'title') changeSelect(1); });
+  window.__game = { G, P, get L() { return L; }, keys, pressed, startIntro, loadLevel, setSize, changeSelect, unlockSelect };
+  // touch devices: tap the logo five times quickly to reveal the secret level select
+  let logoTaps = [];
+  document.querySelector('#title .logo').addEventListener('pointerdown', e => {
+    e.stopPropagation(); SFX.init();
+    const now = performance.now();
+    logoTaps = logoTaps.filter(t => now - t < 1500); logoTaps.push(now);
+    if (logoTaps.length >= 5) unlockSelect();
+  });
 
   toTitle();
   requestAnimationFrame(frame);
