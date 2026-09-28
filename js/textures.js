@@ -281,5 +281,6 @@ const TEX = (() => {
     return t;
   }
 
-  return { mats, gradient, textTex, canvasTex, lava, roundSprite, earth };
+  const isStone = theme => !!(PALETTES[theme] && PALETTES[theme].stone);
+  return { mats, gradient, textTex, canvasTex, lava, roundSprite, earth, isStone };
 })();

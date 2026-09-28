@@ -48,6 +48,7 @@ Object.assign(MODELS, (() => {
       a.scale.set(1, 0.7, 0.8);
       arms.push(a);
     }
+    const bg = MODELS.glow(0xc0d0ff, 1.8, 0.3); inner.add(bg);
     return { root, inner, arms, mat: m, eyes };
   }
 
@@ -57,16 +58,15 @@ Object.assign(MODELS, (() => {
     const mB = mat(green ? 0x30b040 : 0xe03020, { roughness: 0.3 });
     const b = mesh(sph('fishBody', 0.42, 16, 12), mB, 0, 0, 0, inner);
     b.scale.set(1, 0.85, 0.6);
-    const tail = mesh(cone('fishTail', 0.26, 0.4, 4), mat(0xffffff), -0.5, 0, 0, inner);
-    tail.rotation.z = Math.PI / 2;
-    tail.scale.z = 0.3;
-    const fin = mesh(cone('fishFin', 0.18, 0.35, 4), mat(0xffffff), 0, 0.38, 0, inner);
-    fin.scale.z = 0.3;
+    const finMat = mat(0xfff4e8, { roughness: 0.4, transparent: true, opacity: 0.92 });
+    const finGeo = geo('fishFinS', () => new THREE.SphereGeometry(0.2, 10, 8));
+    const tail = group(-0.42, 0, 0, inner);
+    for (const sy of [-1, 1]) { const tf = mesh(finGeo, finMat, -0.12, sy * 0.1, 0, tail); tf.scale.set(1.1, 0.55, 0.15); tf.rotation.z = sy * 0.6; }
+    const fin = mesh(finGeo, finMat, -0.05, 0.36, 0, inner); fin.scale.set(1.1, 0.6, 0.12); fin.rotation.z = 0.4;
     for (const sz of [-1, 1]) {
-      bx(0.14, 0.16, 0.04, mat(0xffffff), 0.2, 0.1, sz * 0.24, inner);
-      bx(0.06, 0.1, 0.03, mat(0x111111), 0.23, 0.1, sz * 0.26, inner);
-      const sf = mesh(cone('fishSide', 0.12, 0.3, 4), mat(0xffffff), -0.05, -0.1, sz * 0.25, inner);
-      sf.rotation.z = Math.PI / 2 + 0.5; sf.scale.z = 0.3;
+      const eyeW = mesh(sph('fishEyeW', 0.1, 10, 8), mat(0xffffff), 0.22, 0.1, sz * 0.2, inner); eyeW.scale.set(1, 1.2, 0.6);
+      mesh(sph('fishEyeP', 0.05, 8, 6), mat(0x111111), 0.27, 0.1, sz * 0.25, inner);
+      const sf = mesh(finGeo, finMat, -0.02, -0.12, sz * 0.24, inner); sf.scale.set(0.8, 0.45, 0.12); sf.rotation.set(sz * 0.5, 0, -0.6);
     }
     bx(0.08, 0.12, 0.2, mat(0xffe0a0), 0.42, -0.05, 0, inner);
     return { root, inner, tail };
@@ -126,6 +126,7 @@ Object.assign(MODELS, (() => {
     const root = new THREE.Group();
     const inner = group(0, 0.4, 0, root);
     mesh(sph('podo', 0.38, 14, 10), mat(0xff5010, { emissive: 0xff3000, emissiveIntensity: 1.4 }), 0, 0, 0, inner);
+    inner.add(MODELS.glow(0xff5010, 2.2, 0.7));
     mesh(sph('podoIn', 0.26, 12, 8), mat(0xffd040, { emissive: 0xffc020, emissiveIntensity: 1.6 }), 0, 0.05, 0.14, inner);
     for (const sx of [-1, 1]) bx(0.06, 0.12, 0.03, mat(0x111111), sx * 0.1, 0.08, 0.37, inner);
     return { root, inner };
@@ -140,6 +141,7 @@ Object.assign(MODELS, (() => {
     c2.rotation.z = Math.PI / 2;
     mesh(sph('flameHead', 0.26, 12, 8), mat(0xffa020, { emissive: 0xff8000, emissiveIntensity: 1.8 }), 0.25, 0, 0, inner);
     c.castShadow = c2.castShadow = false;
+    const gl = MODELS.glow(0xff6010, 2.4, 0.7); gl.position.x = -0.2; inner.add(gl);
     return { root, inner };
   }
 

@@ -43,47 +43,83 @@ const MODELS = (() => {
   }
 
   // ---------------- Player ----------------
+  function capEmblemTex() {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d');
+    g.fillStyle = '#ffffff'; g.beginPath(); g.arc(32, 32, 31, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#d82800';
+    g.font = 'bold 44px Arial Black, Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('M', 32, 35);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
   function player() {
     const root = new THREE.Group();
     const body = group(0, 0, 0, root);        // rotated to face direction
     const inner = group(0, 0, 0, body);       // scaled for small/big
     const mShirt = new THREE.MeshStandardMaterial({ color: 0xd82800, roughness: 0.55 });
-    const mOver = new THREE.MeshStandardMaterial({ color: 0x2038ec, roughness: 0.55 });
-    const mSkin = mat(0xffc090), mShoe = mat(0x6b3a10), mHair = mat(0x3a1c06), mBlack = mat(0x111111);
-    const mWhite = mat(0xffffff), mButton = mat(0xffd700, { metalness: 0.6, roughness: 0.3 });
+    const mOver = new THREE.MeshStandardMaterial({ color: 0x2038ec, roughness: 0.6 });
+    const mSkin = mat(0xffc8a0, { roughness: 0.7 }), mShoe = mat(0x6b3a10, { roughness: 0.45 }), mSole = mat(0x3a1c06);
+    const mHair = mat(0x3a1c06, { roughness: 0.9 }), mBlack = mat(0x111111);
+    const mWhite = mat(0xffffff, { roughness: 0.5 }), mButton = mat(0xffd700, { metalness: 0.7, roughness: 0.25 });
+    const mEye = mat(0x1a50d0, { roughness: 0.3 });
+    const S = (k, r, w = 14, h = 10) => geo('pl_' + k, () => new THREE.SphereGeometry(r, w, h));
+    const C = (k, r1, r2, h, n = 12) => geo('pl_' + k, () => new THREE.CylinderGeometry(r1, r2, h, n));
 
     const legs = [];
     for (const sx of [-1, 1]) {
-      const leg = group(sx * 0.13, 0.42, 0, inner);
-      bx(0.2, 0.34, 0.22, mOver, 0, -0.17, 0, leg);
-      bx(0.24, 0.13, 0.36, mShoe, 0, -0.355, 0.05, leg);
+      const leg = group(sx * 0.12, 0.42, 0, inner);
+      mesh(C('leg', 0.1, 0.095, 0.3), mOver, 0, -0.15, 0, leg);
+      const shoe = mesh(S('shoe', 0.15), mShoe, 0, -0.33, 0.06, leg); shoe.scale.set(0.85, 0.55, 1.3);
+      const sole = mesh(C('sole', 0.13, 0.13, 0.04), mSole, 0, -0.395, 0.06, leg); sole.scale.set(1, 1, 1.45);
       legs.push(leg);
     }
-    bx(0.5, 0.24, 0.34, mOver, 0, 0.53, 0, inner);
-    bx(0.48, 0.2, 0.32, mShirt, 0, 0.74, 0, inner);
+    // overalls (rounded) + shirt
+    const belly = mesh(S('belly', 0.27, 16, 12), mOver, 0, 0.53, 0, inner); belly.scale.set(1, 0.62, 0.8);
+    mesh(C('hips', 0.26, 0.22, 0.14, 14), mOver, 0, 0.47, 0, inner).scale.z = 0.82;
+    const chest = mesh(S('chest', 0.25, 16, 12), mShirt, 0, 0.74, 0, inner); chest.scale.set(1, 0.6, 0.78);
+    bx(0.3, 0.14, 0.05, mOver, 0, 0.66, 0.18, inner);
     for (const sx of [-1, 1]) {
-      bx(0.08, 0.2, 0.02, mOver, sx * 0.14, 0.74, 0.165, inner);
-      bx(0.07, 0.07, 0.03, mButton, sx * 0.14, 0.66, 0.18, inner);
+      const strap = bx(0.07, 0.24, 0.03, mOver, sx * 0.12, 0.76, 0.17, inner); strap.rotation.z = sx * 0.12;
+      mesh(S('button', 0.035, 8, 6), mButton, sx * 0.12, 0.66, 0.21, inner);
     }
     const arms = [];
     for (const sx of [-1, 1]) {
-      const arm = group(sx * 0.31, 0.82, 0, inner);
-      bx(0.14, 0.3, 0.16, mShirt, 0, -0.13, 0, arm);
-      bx(0.17, 0.13, 0.19, mWhite, 0, -0.32, 0, arm);
+      const arm = group(sx * 0.29, 0.8, 0, inner);
+      mesh(S('shoulder', 0.085, 10, 8), mShirt, 0, 0, 0, arm);
+      mesh(C('sleeve', 0.075, 0.07, 0.26, 10), mShirt, 0, -0.14, 0, arm);
+      const glove = mesh(S('glove', 0.095, 12, 10), mWhite, 0, -0.31, 0.01, arm); glove.scale.set(1, 1.05, 1.05);
+      mesh(S('cuff', 0.08, 10, 6), mWhite, 0, -0.24, 0, arm).scale.set(1, 0.45, 1);
       arms.push(arm);
     }
+    // head
     const head = group(0, 0.84, 0, inner);
-    bx(0.44, 0.38, 0.4, mSkin, 0, 0.19, 0, head);
-    bx(0.13, 0.11, 0.12, mSkin, 0, 0.16, 0.25, head);
-    bx(0.32, 0.06, 0.05, mHair, 0, 0.085, 0.215, head);
+    const skull = mesh(S('head', 0.24, 20, 16), mSkin, 0, 0.19, 0, head); skull.scale.set(1, 0.95, 0.95);
+    mesh(S('nose', 0.085, 12, 10), mSkin, 0, 0.12, 0.25, head);
     for (const sx of [-1, 1]) {
-      bx(0.07, 0.11, 0.02, mBlack, sx * 0.09, 0.27, 0.205, head);
-      bx(0.03, 0.18, 0.2, mHair, sx * 0.225, 0.2, -0.05, head);
+      const mu = mesh(S('mus', 0.08, 10, 8), mHair, sx * 0.075, 0.055, 0.2, head); mu.scale.set(1.35, 0.55, 0.6); mu.rotation.z = sx * -0.25;
+      mesh(S('ear', 0.055, 8, 6), mSkin, sx * 0.235, 0.17, -0.02, head).scale.set(0.5, 1, 0.8);
+      const sb = mesh(S('sideburn', 0.07, 8, 6), mHair, sx * 0.215, 0.24, -0.06, head); sb.scale.set(0.45, 1, 0.7);
     }
-    bx(0.46, 0.2, 0.1, mHair, 0, 0.18, -0.18, head);
-    bx(0.48, 0.15, 0.44, mShirt, 0, 0.42, 0, head);
-    bx(0.46, 0.05, 0.22, mShirt, 0, 0.36, 0.27, head);
-    bx(0.12, 0.1, 0.02, mWhite, 0, 0.43, 0.225, head);
+    const hairBack = mesh(S('hairBack', 0.23, 14, 10), mHair, 0, 0.2, -0.06, head); hairBack.scale.set(1.02, 0.8, 0.95);
+    skull.renderOrder = 1;
+    const eyes = [];
+    for (const sx of [-1, 1]) {
+      const eg = group(sx * 0.075, 0.215, 0.215, head);
+      const w = mesh(S('eyeW', 0.055, 10, 8), mWhite, 0, 0, 0, eg); w.scale.set(0.75, 1.15, 0.5);
+      const pu = mesh(S('eyeP', 0.034, 8, 6), mEye, 0.005, -0.005, 0.02, eg); pu.scale.set(0.8, 1.2, 0.5);
+      mesh(S('eyeK', 0.018, 6, 4), mBlack, 0.006, -0.005, 0.034, eg);
+      const brow = bx(0.08, 0.022, 0.02, mHair, 0, 0.085, 0.01, eg); brow.rotation.z = sx * -0.15;
+      eyes.push(eg);
+    }
+    // cap
+    const cap = mesh(geo('pl_cap', () => new THREE.SphereGeometry(0.255, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2)), mShirt, 0, 0.3, -0.01, head);
+    cap.scale.set(1.02, 0.78, 1.02);
+    const brim = mesh(geo('pl_brim', () => new THREE.CylinderGeometry(0.2, 0.2, 0.035, 16, 1, false, -Math.PI / 2, Math.PI)), mShirt, 0, 0.31, 0.1, head);
+    brim.scale.set(1.15, 1, 0.95); brim.rotation.x = 0.12;
+    const emblem = new THREE.Mesh(geo('pl_emb', () => new THREE.CircleGeometry(0.07, 20)), new THREE.MeshStandardMaterial({ map: capEmblemTex(), roughness: 0.5 }));
+    emblem.position.set(0, 0.41, 0.195); emblem.rotation.x = -0.6;
+    head.add(emblem);
 
     const palettes = {
       normal: [0xd82800, 0x2038ec],
@@ -94,7 +130,7 @@ const MODELS = (() => {
       mShirt.color.setHex(p[0]); mOver.color.setHex(p[1]);
     }
     function setColors(a, b) { mShirt.color.setHex(a); mOver.color.setHex(b); }
-    return { root, body, inner, legs, arms, head, setPalette, setColors };
+    return { root, body, inner, legs, arms, head, eyes, setPalette, setColors };
   }
 
   // ---------------- Goomba ----------------
@@ -201,6 +237,7 @@ const MODELS = (() => {
       return eg;
     });
     const m = new THREE.MeshStandardMaterial({ color: 0xffd800, emissive: 0xffb000, emissiveIntensity: 0.6, roughness: 0.3 });
+    inner.add(glow(0xfff080, 1.8, 0.6));
     mesh(g, m, 0, 0, 0, inner);
     for (const sx of [-1, 1]) bx(0.04, 0.1, 0.02, mat(0x111111), sx * 0.07, 0.03, 0.15, inner);
     return { root, inner, mat: m };
@@ -213,8 +250,23 @@ const MODELS = (() => {
     bx(0.07, 0.3, 0.1, mat(0xffe890, { metalness: 0.5, roughness: 0.3 }), 0, 0, 0, inner);
     return { root, inner };
   }
+  let glowTex = null;
+  function glow(color, size, opacity = 0.7) {
+    if (!glowTex) {
+      const c = document.createElement('canvas'); c.width = c.height = 64;
+      const g = c.getContext('2d');
+      const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+      gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+      glowTex = new THREE.CanvasTexture(c);
+    }
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, opacity, depthWrite: false, blending: THREE.AdditiveBlending }));
+    s.scale.set(size, size, 1);
+    return s;
+  }
   function fireball() {
     const root = new THREE.Group();
+    const gl = glow(0xff7020, 1.1, 0.8); gl.position.y = 0.18; root.add(gl);
     mesh(geo('fire', () => new THREE.IcosahedronGeometry(0.2, 0)), mat(0xff7010, { emissive: 0xff5000, emissiveIntensity: 1.2 }), 0, 0.18, 0, root);
     mesh(geo('fire2', () => new THREE.IcosahedronGeometry(0.12, 0)), mat(0xffee60, { emissive: 0xffe060, emissiveIntensity: 1.5 }), 0, 0.18, 0, root);
     return { root };
@@ -252,27 +304,110 @@ const MODELS = (() => {
     return { root, flag };
   }
 
+  // Armenian tricolor (red / blue / apricot) as a waving cloth
+  function armenianFlag(w = 1.5, h = 0.95) {
+    const c = document.createElement('canvas'); c.width = 96; c.height = 60;
+    const g = c.getContext('2d');
+    g.fillStyle = '#D90012'; g.fillRect(0, 0, 96, 20);
+    g.fillStyle = '#0033A0'; g.fillRect(0, 20, 96, 20);
+    g.fillStyle = '#F2A800'; g.fillRect(0, 40, 96, 20);
+    const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+    const geom = new THREE.PlaneGeometry(w, h, 18, 6);
+    geom.translate(w / 2, -h / 2, 0);
+    const base = Float32Array.from(geom.attributes.position.array);
+    const m = new THREE.Mesh(geom, new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide, roughness: 0.75 }));
+    m.castShadow = true;
+    m.userData.wave = t => {
+      const pos = geom.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = base[i * 3], y = base[i * 3 + 1];
+        const k = x / w;
+        pos.setZ(i, Math.sin(x * 4.2 - t * 7 + y * 1.5) * 0.12 * k);
+        pos.setY(i, y - k * k * 0.08 + Math.sin(x * 3 - t * 5) * 0.03 * k);
+      }
+      pos.needsUpdate = true;
+      geom.computeVertexNormals();
+    };
+    return m;
+  }
+
+  // Castle sits BEHIND the play lane (front face at z = -0.9) so the player walks in through the door.
   function castle(m) {
     const root = new THREE.Group();
+    const FZ = -0.9, D = 1.6, CZ = FZ - D / 2;
     const bb = (w, h, d, x, y, z, mm = m) => { const me = bx(w, h, d, mm, x, y, z, root); me.receiveShadow = true; return me; };
-    bb(5, 3, 3, 0, 1.5, -0.5);
-    for (let i = 0; i < 5; i++) bb(0.7, 0.6, 3, -2.15 + i * 1.075, 3.3, -0.5);
-    bb(3, 2, 2.2, 0, 4, -0.8);
-    for (let i = 0; i < 3; i++) bb(0.65, 0.5, 2.2, -1.175 + i * 1.175, 5.25, -0.8);
-    const dark = mat(0x050505);
-    bx(1.1, 1.8, 0.1, dark, 0, 0.9, 1.0, root);
-    const arch = mesh(geo('arch', () => new THREE.CylinderGeometry(0.55, 0.55, 0.1, 16, 1, false, 0, Math.PI).rotateX(Math.PI / 2).rotateZ(Math.PI / 2)), dark, 0, 1.8, 1.0, root);
-    arch.castShadow = false;
-    bx(0.5, 0.8, 0.1, dark, -0.7, 4.2, 0.35, root);
-    bx(0.5, 0.8, 0.1, dark, 0.7, 4.2, 0.35, root);
-    // flag on top (raised after clear)
-    const fl = group(0, 5.5, -0.8, root);
-    mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4, 6), mat(0xcccccc), 0, 0.7, 0, fl);
-    const s = new THREE.Shape(); s.moveTo(0, 0); s.lineTo(0.8, -0.25); s.lineTo(0, -0.5); s.closePath();
-    const f = new THREE.Mesh(new THREE.ShapeGeometry(s), mat(0xd82800, { side: THREE.DoubleSide }));
-    f.position.set(0.04, 0.4, 0);
-    fl.add(f);
-    return { root, flag: f };
+    const stone = mat(0xd8c8b0, { roughness: 0.8 }), dark = mat(0x030303, { roughness: 1 });
+    const roof = mat(0xc82818, { roughness: 0.5 }), gold = mat(0xffcc30, { metalness: 0.8, roughness: 0.25 });
+    // keep
+    bb(5, 3.2, D, 0, 1.6, CZ);
+    bb(5.2, 0.18, D + 0.2, 0, 3.25, CZ, stone);
+    for (let i = 0; i < 6; i++) { bb(0.5, 0.55, 0.35, -2.25 + i * 0.9, 3.6, FZ - 0.18); bb(0.5, 0.55, 0.35, -2.25 + i * 0.9, 3.6, FZ - D + 0.18); }
+    // plinth
+    bb(5.3, 0.3, D + 0.3, 0, 0.15, CZ, stone);
+    // door: black recess the player disappears into
+    const door = bx(1.2, 1.75, 1.2, dark, 0, 0.875, FZ - 0.58, root); door.castShadow = false;
+    const archG = geo('castleArch', () => new THREE.CylinderGeometry(0.6, 0.6, 1.2, 20, 1, false, -Math.PI / 2, Math.PI).rotateX(Math.PI / 2));
+    const arch = mesh(archG, dark, 0, 1.75, FZ - 0.58, root); arch.castShadow = false;
+    const frameG = geo('castleFrame', () => new THREE.TorusGeometry(0.68, 0.1, 8, 20, Math.PI));
+    mesh(frameG, stone, 0, 1.75, FZ + 0.03, root);
+    for (const sx of [-1, 1]) bb(0.2, 1.75, 0.2, sx * 0.68, 0.875, FZ + 0.03, stone);
+    bb(0.24, 0.24, 0.1, 0, 2.5, FZ + 0.06, stone);
+    // portcullis teeth peeking from the top of the doorway
+    for (let i = -2; i <= 2; i++) { const t = mesh(geo('pcTooth', () => new THREE.ConeGeometry(0.05, 0.25, 4)), mat(0x3a3a40, { metalness: 0.6 }), i * 0.22, 2.08, FZ + 0.01, root); t.rotation.x = Math.PI; }
+    // corner turrets with conical roofs and pennants
+    const pennants = [];
+    for (const sx of [-1, 1]) {
+      const t = mesh(geo('turret', () => new THREE.CylinderGeometry(0.6, 0.65, 4.2, 16)), m, sx * 2.55, 2.1, CZ, root); t.receiveShadow = true;
+      mesh(geo('turretRing', () => new THREE.CylinderGeometry(0.72, 0.72, 0.16, 16)), stone, sx * 2.55, 4.25, CZ, root);
+      mesh(geo('turretRoof', () => new THREE.ConeGeometry(0.8, 1.5, 16)), roof, sx * 2.55, 5.08, CZ, root);
+      mesh(geo('turretBall', () => new THREE.SphereGeometry(0.08, 8, 6)), gold, sx * 2.55, 5.88, CZ, root);
+      const win = bx(0.22, 0.45, 0.05, mat(0xffc860, { emissive: 0xffa030, emissiveIntensity: 0.9 }), sx * 2.55, 2.9, CZ + 0.62, root); win.castShadow = false;
+      const pg = group(sx * 2.55, 5.9, CZ, root);
+      mesh(geo('pennPole', () => new THREE.CylinderGeometry(0.02, 0.02, 0.6, 5)), mat(0x888888), 0, 0.3, 0, pg);
+      const pen = mesh(geo('pennant', () => { const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(0.5, -0.12); sh.lineTo(0, -0.24); sh.closePath(); return new THREE.ShapeGeometry(sh); }), mat(0xffd000, { side: THREE.DoubleSide }), 0.02, 0.58, 0, pg);
+      pennants.push(pen);
+    }
+    // central tower
+    const TZ = CZ - 0.1;
+    bb(2.6, 2.4, 1.3, 0, 4.45, TZ);
+    bb(2.8, 0.16, 1.5, 0, 5.72, TZ, stone);
+    for (let i = 0; i < 4; i++) bb(0.42, 0.5, 0.3, -1.05 + i * 0.7, 6.05, TZ + 0.5);
+    for (let i = 0; i < 4; i++) bb(0.42, 0.5, 0.3, -1.05 + i * 0.7, 6.05, TZ - 0.5);
+    const winMat = mat(0xffc860, { emissive: 0xffa030, emissiveIntensity: 0.9 });
+    for (const sx of [-1, 1]) {
+      const w = bx(0.36, 0.7, 0.05, winMat, sx * 0.62, 4.5, TZ + 0.66, root); w.castShadow = false;
+      const wa = mesh(geo('winArch', () => new THREE.CircleGeometry(0.18, 12, 0, Math.PI)), winMat, sx * 0.62, 4.85, TZ + 0.69, root); wa.castShadow = false;
+      bx(0.03, 0.7, 0.03, mat(0x302018), sx * 0.62, 4.5, TZ + 0.69, root).castShadow = false;
+    }
+    // banners on the keep
+    for (const sx of [-1, 1]) {
+      const b = bx(0.55, 1.2, 0.03, mat(0xb01818, { roughness: 0.9 }), sx * 1.55, 2.25, FZ + 0.02, root);
+      const tip = mesh(geo('bannerTip', () => new THREE.ConeGeometry(0.28, 0.3, 3).rotateZ(Math.PI)), mat(0xb01818), sx * 1.55, 1.52, FZ + 0.02, root); tip.scale.z = 0.1;
+      const em = mesh(geo('bannerEm', () => new THREE.CircleGeometry(0.15, 12)), gold, sx * 1.55, 2.4, FZ + 0.045, root); em.castShadow = false;
+      bx(0.7, 0.05, 0.05, gold, sx * 1.55, 2.86, FZ + 0.04, root);
+    }
+    // wall torches beside the door
+    const flames = [];
+    for (const sx of [-1, 1]) {
+      bx(0.1, 0.3, 0.14, mat(0x3a2a1a), sx * 0.98, 1.55, FZ + 0.08, root);
+      const f = mesh(geo('torchFlame', () => new THREE.ConeGeometry(0.1, 0.32, 8)), mat(0xffa030, { emissive: 0xff7010, emissiveIntensity: 2.2 }), sx * 0.98, 1.85, FZ + 0.12, root);
+      f.castShadow = false; flames.push(f);
+    }
+    // flagpole atop the tower + Armenian flag (raised after the level is cleared)
+    const poleBase = 6.3, poleH = 2.6;
+    mesh(geo('cPole', () => new THREE.CylinderGeometry(0.035, 0.045, 2.6, 8)), mat(0xe0e0e8, { metalness: 0.7, roughness: 0.3 }), 0, poleBase + poleH / 2, TZ, root);
+    mesh(geo('cPoleBall', () => new THREE.SphereGeometry(0.09, 10, 8)), gold, 0, poleBase + poleH + 0.07, TZ, root);
+    const flag = armenianFlag(1.5, 0.95);
+    flag.position.set(0.04, poleBase + 0.9, TZ);
+    root.add(flag);
+    return {
+      root, flag, flagLow: poleBase + 0.95, flagHigh: poleBase + poleH - 0.06,
+      animate(t) {
+        flames.forEach((f, i) => { f.scale.set(1, 0.85 + Math.abs(Math.sin(t * 13 + i * 2)) * 0.35, 1); });
+        pennants.forEach((p, i) => { p.rotation.y = Math.sin(t * 3 + i) * 0.4; });
+        if (flag.visible) flag.userData.wave(t);
+      },
+    };
   }
 
   function cloud(mCloud) {
@@ -317,5 +452,5 @@ const MODELS = (() => {
     return root;
   }
 
-  return { boxGeo, mat, bx, mesh, group, geo, player, goomba, koopa, mushroom, flower, star, coin, fireball, pipe, flagpole, castle, cloud, bush, hill, tree };
+  return { boxGeo, mat, bx, mesh, group, geo, glow, armenianFlag, player, goomba, koopa, mushroom, flower, star, coin, fireball, pipe, flagpole, castle, cloud, bush, hill, tree };
 })();

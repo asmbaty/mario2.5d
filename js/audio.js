@@ -74,6 +74,8 @@ const SFX = (() => {
     bossfall() { seq([[55, .12], [54, .12], [53, .12], [52, .12], [51, .12], [50, .12], [49, .12], [48, .12], [36, .5]], 'sawtooth', 0.14); },
     burn() { if (!ctx) return; const t = now(); noise(t, 0.5, 0.4, sfxGain, 1500); },
     axe() { if (!ctx) return; const t = now(); tone(1600, t, 0.3, 'square', 0.12, 900); noise(t, 0.2, 0.2); },
+    thunder() { if (!ctx) return; const t = now() + 0.15; noise(t, 1.6, 0.5, sfxGain, 40); tone(55, t, 1.4, 'sawtooth', 0.12, 30); },
+    door() { seq([[48, .08], [43, .08], [36, .2]], 'triangle', 0.3); },
     firework() { if (!ctx) return; const t = now(); noise(t, 0.5, 0.4, sfxGain, 150); tone(90, t, 0.3, 'triangle', 0.4, 40); },
   };
 

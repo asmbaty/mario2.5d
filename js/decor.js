@@ -271,6 +271,10 @@ const DECOR = (() => {
     sand: { n: 500, color: 0xe8c890, size: 0.1, v: (p, t, i) => [7 + (i % 7), Math.sin(t * 2 + i) * 0.4, 0] },
     bubbles: { n: 260, color: 0xd0f4ff, size: 0.2, v: (p, t, i) => [Math.sin(t * 3 + i) * 0.4, 1.2 + (i % 4) * 0.3, 0] },
     fireflies: { n: 120, color: 0xb8ff60, size: 0.25, v: (p, t, i) => [Math.sin(t * 0.7 + i) * 0.6, Math.cos(t * 0.9 + i * 2) * 0.5, 0], blink: true },
+    motes: { n: 220, color: 0xa0b8ff, size: 0.08, v: (p, t, i) => [Math.sin(t * 0.3 + i) * 0.2, Math.cos(t * 0.4 + i * 1.3) * 0.15, 0], blink: true },
+    petals: { n: 260, color: 0xffb0c8, size: 0.16, v: (p, t, i) => [1.2 + Math.sin(t + i) * 0.8, -0.9 - (i % 4) * 0.15, 0] },
+    pollen: { n: 200, color: 0xfff8c0, size: 0.09, v: (p, t, i) => [0.4 + Math.sin(t * 0.5 + i) * 0.3, Math.sin(t * 0.7 + i * 2) * 0.25, 0] },
+    moondust: { n: 180, color: 0xd8d8e8, size: 0.08, v: (p, t, i) => [Math.sin(t * 0.2 + i) * 0.15, 0.2 + Math.sin(t * 0.3 + i) * 0.1, 0] },
     embers: { n: 260, color: 0xff8030, size: 0.13, v: (p, t, i) => [Math.sin(t + i) * 0.3, 1.6 + (i % 5) * 0.3, 0] },
   };
   function weather(kind, world, camX) {
