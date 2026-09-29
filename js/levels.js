@@ -109,12 +109,12 @@ const LEVELS = [
       b.blocks(54, 7, 'BBBBBBBB');
       b.enemy('goomba', 56, 8).enemy('goomba', 58, 8);
       b.coinRow(55, 10, 6);
-      b.blocks(64, 5, 'B?BL');
+      b.blocks(64, 5, 'B?B?');
       b.pipe(70, 3).pipe(76, 2);
       b.enemy('goomba', 73);
       b.coinRow(80, 6, 4);
       b.enemy('koopa', 88).enemy('goomba', 92).enemy('goomba', 94);
-      b.blocks(90, 6, 'BBBSBB');
+      b.blocks(90, 6, 'BBB?BB');
       b.pipe(100, 3).pipe(106, 4).pipe(112, 2);
       b.enemy('goomba', 103).enemy('goomba', 109);
       b.lift(117, 4, 3, 'x', 2.2, 1.6);
@@ -149,7 +149,7 @@ const LEVELS = [
       b.lift(100, 5, 3, 'y', 3, 1.5);
       b.platform(106, 9, 5).enemy('red', 108, 10).coinRow(106, 12, 5);
       b.platform(114, 4, 4);
-      b.platform(120, 7, 3).blocks(120, 11, '?S?');
+      b.platform(120, 7, 3).blocks(120, 11, '???');
       b.lift(127, 5, 3, 'x', 2.5, 1.6);
       b.platform(134, 5, 6).enemy('goomba', 136, 6).enemy('goomba', 138, 6);
       b.platform(142, 7, 4).coinRow(142, 10, 4);
@@ -186,7 +186,7 @@ const LEVELS = [
       b.coinRow(111, 6, 3);
       b.stairsUp(116, 4).stairsDown(122, 4);
       b.enemy('goomba', 120);
-      b.blocks(130, 5, 'BMB');
+      b.blocks(130, 5, 'B?B');
       b.enemy('koopa', 134).enemy('goomba', 138).enemy('goomba', 139.5);
       b.pipe(143, 2, true);
       b.coinRow(151, 6, 3);
@@ -205,12 +205,12 @@ const LEVELS = [
       b.enemy('spiny', 18);
       b.cannon(24, 2);
       b.enemy('goomba', 30).enemy('goomba', 31.5);
-      b.blocks(34, 6, '?M?');
+      b.blocks(34, 6, '???');
       b.cannon(42, 3);
       b.enemy('spiny', 46);
       b.coinRow(51, 6, 3);
       b.pipe(57, 3, true);
-      b.blocks(63, 5, 'BBBBB').blocks(63, 9, 'B?S?B');
+      b.blocks(63, 5, 'BBMBB').blocks(63, 9, 'B?S?B');
       b.enemy('koopa', 68).enemy('spiny', 72);
       b.cannon(76, 2).cannon(84, 4);
       b.coinRow(91, 7, 4);
@@ -220,7 +220,7 @@ const LEVELS = [
       b.blocks(113, 5, '?C?');
       b.pipe(120, 4, true);
       b.enemy('goomba', 124).enemy('goomba', 125.5).enemy('koopa', 128);
-      b.cannon(138, 3).blocks(142, 6, 'BMB');
+      b.cannon(138, 3).blocks(142, 6, 'B?B');
       b.enemy('spiny', 146).enemy('spiny', 148);
       b.pipe(152, 2, true);
       b.cannon(158, 2);
@@ -240,7 +240,7 @@ const LEVELS = [
       b.coinRow(20, 7, 2).coinRow(20, 8, 2);
       b.coinRow(31, 5, 3);
       b.fill(44, 45, 2, 8, 'X');
-      b.blocks(50, 6, '?M?');
+      b.blocks(50, 6, '???');
       b.fill(58, 59, 2, 3, 'X').fill(58, 59, 8, 13, 'X');
       b.coinRow(58, 5, 2);
       b.coinRow(71, 8, 5);
@@ -250,7 +250,7 @@ const LEVELS = [
       b.coinRow(121, 4, 5);
       b.fill(132, 133, 2, 9, 'X');
       b.coinRow(132, 11, 2);
-      b.blocks(140, 8, '?L?');
+      b.blocks(140, 8, '?M?');
       b.fill(150, 151, 2, 4, 'X').fill(150, 151, 9, 13, 'X');
       b.coinRow(160, 6, 6);
       for (const [x, y] of [[25, 6], [32, 9], [40, 4], [48, 8], [55, 11], [63, 5], [72, 7], [80, 10], [88, 4], [95, 8], [105, 9],
@@ -271,11 +271,11 @@ const LEVELS = [
       b.enemy('goomba', 18).enemy('goomba', 19.5);
       b.enemy('boo', 26, 8);
       b.pipe(30, 3, true);
-      b.blocks(36, 6, 'BMB');
+      b.blocks(36, 6, 'B?B');
       b.enemy('koopa', 40);
       b.coinRow(46, 6, 3);
       b.enemy('boo', 56, 10);
-      b.blocks(58, 5, '?B?B?').blocks(60, 9, 'L');
+      b.blocks(58, 5, '?B?B?').blocks(60, 9, 'M');
       b.enemy('goomba', 64).enemy('goomba', 65.5).enemy('red', 70);
       b.pipe(74, 4, true);
       b.coinRow(84, 5, 3);
@@ -284,11 +284,11 @@ const LEVELS = [
       b.stairsUp(100, 3).stairsDown(105, 3);
       b.enemy('boo', 112, 10);
       b.enemy('koopa', 115).enemy('goomba', 118).enemy('goomba', 119.5);
-      b.blocks(122, 5, 'BSB');
+      b.blocks(122, 5, 'B?B');
       b.platform(131, 5, 4);
       b.pipe(140, 2, true);
       b.enemy('boo', 146, 7);
-      b.blocks(150, 5, '?M?');
+      b.blocks(150, 5, '???');
       b.enemy('goomba', 154).enemy('goomba', 155.5);
       b.enemy('boo', 160, 11);
       b.stairsUp(165, 8).column(173, 8);
@@ -321,7 +321,7 @@ const LEVELS = [
       b.cannon(134, 2);
       b.coinRow(142, 10, 5);
       b.enemy('goomba', 152).enemy('goomba', 153.5).enemy('spiny', 158);
-      b.blocks(160, 6, 'BMB');
+      b.blocks(160, 6, 'B?B');
       b.cannon(168, 3);
       b.coinRow(176, 8, 3);
       b.stairsUp(184, 6).column(190, 6);
@@ -340,7 +340,7 @@ const LEVELS = [
       b.enemy('goomba', 20);
       for (let i = 0; i < 5; i++) b.coinRow(29 + i, 4 + [0, 1, 2, 1, 0][i], 1);
       // first dash panel: launch across a canyon too wide to jump normally
-      b.blocks(40, 5, '?M?');
+      b.blocks(40, 5, '???');
       b.enemy('goomba', 44);
       b.dash(51, 2);
       for (let i = 0; i < 9; i++) b.coinRow(62 + i, 5 + Math.round(Math.sin(i / 8 * Math.PI) * 3), 1);
@@ -350,7 +350,7 @@ const LEVELS = [
       b.coinRow(84, 2, 9);
       for (let i = 0; i < 5; i++) b.coinRow(101 + i, 5 + [0, 1, 2, 1, 0][i], 1);
       // bullet bill alley
-      b.blocks(114, 5, 'BSB');
+      b.blocks(114, 5, 'BMB');
       b.cannon(120, 2);
       b.enemy('goomba', 126);
       b.dash(135, 2);
@@ -374,7 +374,7 @@ const LEVELS = [
     build() {
       const b = new LevelBuilder(200, 'candy', '4-1');
       b.ground(0, 44).ground(48, 79).ground(86, 118).ground(124, 158).ground(163, 199);
-      b.blocks(12, 5, 'B?M?B');
+      b.blocks(12, 5, 'B???B');
       b.enemy('goomba', 18).enemy('goomba', 19.5);
       b.blocks(24, 2, 'J');
       b.fill(26, 31, 10, 10, 'X').coinRow(26, 11, 6).enemy('red', 29, 11);
@@ -382,19 +382,19 @@ const LEVELS = [
       b.pipe(38, 2);
       b.enemy('koopa', 41);
       b.coinRow(45, 6, 3);
-      b.blocks(52, 5, 'BBBB').blocks(53, 9, '?S?');
+      b.blocks(52, 5, 'BBBB').blocks(53, 9, '?M?');
       b.enemy('goomba', 56).enemy('goomba', 57.5);
       b.pipe(62, 3, true);
       b.blocks(68, 2, 'J');
       b.fill(70, 76, 10, 10, 'B').coinRow(70, 11, 7).enemy('red', 73, 11);
       b.blocks(78, 2, 'J').coinRow(81, 9, 4);
-      b.blocks(90, 5, '?M?');
+      b.blocks(90, 5, '???');
       b.enemy('koopa', 95).enemy('goomba', 98).enemy('goomba', 99.5);
       b.stairsUp(102, 3).blocks(106, 5, 'J');
       b.fill(108, 114, 12, 12, 'X').coinRow(108, 13, 7);
       b.pipe(116, 2, true);
       b.coinRow(119, 7, 5);
-      b.blocks(128, 5, 'BCB').blocks(132, 9, 'BLB');
+      b.blocks(128, 5, 'BCB').blocks(132, 9, 'B?B');
       b.enemy('spiny', 134).enemy('spiny', 137);
       b.blocks(140, 2, 'JJJ').coinRow(140, 12, 3);
       b.enemy('goomba', 148).enemy('goomba', 149.5).enemy('red', 152);
@@ -430,7 +430,7 @@ const LEVELS = [
       b.blocks(98, 6, 'BLB');
       b.enemy('red', 104).enemy('spiny', 108).enemy('spiny', 110);
       b.stairsUp(114, 4).stairsDown(118, 4);
-      b.blocks(124, 5, '?M?');
+      b.blocks(124, 5, '???');
       b.lift(131, 4, 3, 'x', 2.2, 1.4);
       b.enemy('koopa', 140).enemy('goomba', 145).enemy('goomba', 146.5);
       b.pipe(150, 4, true);
@@ -447,26 +447,26 @@ const LEVELS = [
     build() {
       const b = new LevelBuilder(200, 'airship', '4-3', { wind: true });
       b.ground(0, 30).ground(35, 62).ground(67, 70).ground(75, 100).ground(105, 108).ground(113, 140).ground(146, 170).ground(175, 199);
-      b.blocks(10, 5, '?M?');
+      b.blocks(10, 5, '???');
       b.cannon(18, 2);
       b.enemy('goomba', 24).enemy('goomba', 25.5);
       b.coinRow(31, 6, 4);
       b.column(40, 2).column(41, 3);
       b.cannon(48, 3);
       b.enemy('koopa', 54);
-      b.blocks(56, 6, 'BSB');
+      b.blocks(56, 6, 'B?B');
       b.coinRow(63, 7, 4).coinRow(71, 7, 4);
       b.cannon(78, 2).cannon(86, 4);
       b.enemy('red', 92).enemy('goomba', 96);
       b.lift(101, 4, 3, 'x', 1.5, 1.2);
       b.coinRow(109, 7, 4);
-      b.blocks(116, 5, 'B?B?B').blocks(118, 9, 'L');
+      b.blocks(116, 5, 'B?B?B').blocks(118, 9, 'M');
       b.cannon(124, 3);
       b.enemy('spiny', 128).enemy('spiny', 131);
       b.cannon(136, 2);
       b.lift(141, 4, 3, 'y', 2, 1.1);
       b.enemy('koopa', 150).enemy('goomba', 156).enemy('goomba', 157.5);
-      b.blocks(152, 5, '?M?');
+      b.blocks(152, 5, '???');
       b.cannon(162, 3);
       b.coinRow(171, 7, 4);
       b.stairsUp(178, 6).column(184, 6);
@@ -484,7 +484,7 @@ const LEVELS = [
       b.blocks(12, 5, 'B?B');
       b.enemy('goomba', 17).enemy('goomba', 18.5);
       b.pipe(24, 3, true);
-      b.blocks(30, 5, '?M?');
+      b.blocks(30, 5, '???');
       b.enemy('koopa', 34);
       b.blocks(37, 1, 'DDDDD').coinRow(37, 6, 5);
       b.enemy('goomba', 48).enemy('goomba', 50);
@@ -517,7 +517,7 @@ const LEVELS = [
       const b = new LevelBuilder(202, 'volcano', '5-2', { meteors: true });
       b.ground(0, 34).ground(39, 66).ground(71, 100).ground(106, 134).ground(139, 168).ground(173, 201);
       b.podoboo(36.5).podoboo(68.5).podoboo(103).podoboo(136.5).podoboo(170.5);
-      b.blocks(12, 5, '?M?');
+      b.blocks(12, 5, '???');
       b.enemy('goomba', 18).enemy('goomba', 19.5);
       b.column(26, 2).column(27, 3);
       b.enemy('spiny', 30);
@@ -526,13 +526,13 @@ const LEVELS = [
       b.pipe(60, 3, true);
       b.firebar(78, 5, 4, 1.6);
       b.enemy('goomba', 84).enemy('goomba', 85.5);
-      b.blocks(88, 5, 'BSB');
+      b.blocks(88, 5, 'BMB');
       b.stairsUp(94, 3);
       b.blocks(112, 6, '?L?');
       b.enemy('spiny', 116).enemy('spiny', 119).enemy('red', 124);
       b.cannon(128, 2);
       b.firebar(146, 5, 5, -1.5);
-      b.blocks(150, 9, 'BMB');
+      b.blocks(150, 9, 'B?B');
       b.enemy('koopa', 154).enemy('goomba', 160).enemy('goomba', 161.5);
       b.pipe(164, 2, true);
       b.stairsUp(178, 8).column(186, 8);
@@ -561,7 +561,7 @@ const LEVELS = [
       b.podoboo(65.5).podoboo(68.5);
       b.ground(70, 98);
       b.firebar(76, 5, 5, 2.2).firebar(84, 7, 6, -1.5).firebar(92, 5, 5, 2.2);
-      b.blocks(80, 10, 'B?B').blocks(88, 10, 'M');
+      b.blocks(80, 10, 'B?B').blocks(88, 10, '?');
       b.enemy('spiny', 88).enemy('koopa', 95);
       b.podoboo(100.5);
       b.ground(102, 137);

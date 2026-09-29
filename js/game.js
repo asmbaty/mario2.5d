@@ -38,7 +38,11 @@
   // Renderer / scene
   // ============================================================
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  // Render resolution: full (up to 2x) by default. adaptRes() lowers it a notch only while the GPU
+  // can't keep 60 fps, and raises it again once there is room.
+  const RES = { steps: [1, 0.85, 0.72, 0.6, 0.5], lvl: 0, t0: 0, frames: 0, good: 0, hold: 0, holdLen: 30, check: null, minDt: 1 };
+  const applyRes = () => renderer.setPixelRatio(Math.max(0.75, Math.min(window.devicePixelRatio, 2) * RES.steps[RES.lvl]));
+  applyRes();
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -60,17 +64,66 @@
   const pLight = new THREE.PointLight(0xffc890, 0, 20, 1);
   scene.add(pLight);
 
+  // Level point lights (torches, crystals, lava glow...): every light costs shading work on every pixel,
+  // yet only the few near the camera can reach anything on screen. The originals are hidden and a small
+  // pool, sized to the most that are ever in reach at once, takes over the nearest ones each frame.
+  const lightPool = [];
+  let levelLights = [];
+  function setupLevelLights() {
+    world.updateMatrixWorld(true);
+    levelLights = [];
+    world.traverse(o => {
+      if (!o.isPointLight) return;
+      const p = o.getWorldPosition(new THREE.Vector3());
+      o.visible = false;
+      levelLights.push({ l: o, x: p.x, y: p.y, z: p.z, reach: 0, dx: 0 });
+    });
+    sizeLightPool();
+  }
+  function sizeLightPool() {
+    // widest possible view (boost FOV) at the deepest point the light can touch, plus camera sway
+    const tanH = Math.tan(THREE.MathUtils.degToRad((FOV + 7) / 2)) * camera.aspect;
+    for (const a of levelLights) {
+      const d = a.l.distance || 1e4;
+      a.reach = d + (CAM_D + d - a.z) * tanH + 2.5;
+    }
+    let need = 0;
+    const w = levelLights.length ? L.w : 0;
+    for (let cx = 0; cx <= w; cx += 0.5) {
+      let n = 0;
+      for (const a of levelLights) if (Math.abs(a.x - cx) < a.reach) n++;
+      need = Math.max(need, n);
+    }
+    while (lightPool.length < need) { const p = new THREE.PointLight(0xffffff, 0); scene.add(p); lightPool.push(p); }
+    while (lightPool.length > need) scene.remove(lightPool.pop());
+  }
+  const nearLights = [];
+  function updateLevelLights(cx) {
+    nearLights.length = 0;
+    for (const a of levelLights) { a.dx = Math.abs(a.x - cx); if (a.dx < a.reach) nearLights.push(a); }
+    nearLights.sort((a, b) => a.dx - b.dx);
+    for (let i = 0; i < lightPool.length; i++) {
+      const p = lightPool[i], a = nearLights[i];
+      if (!a) { p.intensity = 0; continue; }
+      const l = a.l;
+      p.position.set(a.x, a.y, a.z);
+      p.color.copy(l.color); p.intensity = l.intensity; p.distance = l.distance; p.decay = l.decay;
+    }
+  }
+
   let world = new THREE.Group();
   scene.add(world);
 
   let halfW = 14, visH = 16;
   function resize() {
     const w = window.innerWidth, h = window.innerHeight;
+    applyRes();
     renderer.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     visH = 2 * CAM_D * Math.tan(THREE.MathUtils.degToRad(FOV / 2));
     halfW = visH * camera.aspect / 2;
+    sizeLightPool();
   }
   window.addEventListener('resize', resize);
   resize();
@@ -99,7 +152,12 @@
   window.addEventListener('keyup', e => { const k = KEYMAP[e.code]; if (k) { e.preventDefault(); release(k); } });
   window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
-  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) document.body.classList.add('touch');
+  // Touch buttons: show only when the primary input is a finger (phones/tablets). Windows laptops with
+  // touchscreens report maxTouchPoints > 0, so instead toggle on actual use: touching shows them, typing hides them.
+  const setTouchUI = on => document.body.classList.toggle('touch', on);
+  setTouchUI(window.matchMedia('(pointer: coarse)').matches);
+  window.addEventListener('pointerdown', e => { if (e.pointerType === 'touch') setTouchUI(true); }, true);
+  window.addEventListener('keydown', () => setTouchUI(false), true);
   document.querySelectorAll('#touch button').forEach(btn => {
     const k = btn.dataset.k;
     btn.addEventListener('pointerdown', e => { e.preventDefault(); SFX.init(); press(k); btn.setPointerCapture(e.pointerId); });
@@ -144,12 +202,14 @@
     hemi.color.setHex(th.hemi[0]); hemi.groundColor.setHex(th.hemi[1]); hemi.intensity = th.hemi[2];
     sun.color.setHex(th.sun[0]); sun.intensity = th.sun[1];
     pLight.intensity = th.point;
+    pLight.visible = th.point > 0;
     pLight.color.setHex(th.pointColor || 0xffc890);
   }
 
   function loadLevel(idx, fromMid) {
     $('toast').classList.remove('show');
     G.bcPhase = null; G.flagPhase = null; G.flash = 0; G.shake = 0;
+    const oldWorld = world, oldBg = scene.background;
     scene.remove(world);
     world = new THREE.Group();
     scene.add(world);
@@ -231,6 +291,55 @@
     clampCam();
     G.time = def.time || 400; G.timeAcc = 0; G.hurried = false; G.freeze = 0;
     G.windT = 0; DECOR.gust = 0; L.meteorT = 3;
+    setupLevelLights();
+    releaseOld(oldWorld, oldBg);
+    warmShaders();
+  }
+
+  // Geometries and textures used by a subtree (sprites share one built-in geometry, left alone).
+  function gpuRes(root, set = new Set()) {
+    root.traverse(o => {
+      if (o.geometry && !o.isSprite) set.add(o.geometry);
+      const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+      for (const m of ms) for (const k in m) { const v = m[k]; if (v && v.isTexture) set.add(v); }
+    });
+    return set;
+  }
+  // Each (re)load rebuilds the world; free the GPU buffers the new one no longer uses so memory
+  // doesn't pile up with every death or level. Cached resources re-upload by themselves if needed again.
+  function releaseOld(oldWorld, oldBg) {
+    const keep = gpuRes(world);
+    keep.add(scene.background);
+    const old = gpuRes(oldWorld);
+    if (oldBg && oldBg.isTexture) old.add(oldBg);
+    for (const r of old) if (!keep.has(r) && !Object.values(FXG).includes(r)) r.dispose();
+  }
+  // Compile every shader the level can need while it loads (behind the intro card), so the first
+  // fireball, power-up or effect doesn't stall a frame in the middle of a run.
+  function warmShaders() {
+    const g = new THREE.Group();
+    const add = o => g.add(o.root || o);
+    for (const m of [MODELS.fireball(), MODELS.coin(), MODELS.mushroom(false), MODELS.mushroom(true), MODELS.flower(), MODELS.star(),
+      MODELS.bullet(), MODELS.flame(), MODELS.meteor()]) add(m);
+    add(new THREE.Mesh(MODELS.boxGeo(0.4, 0.4, 0.4), L.T.brick));
+    add(new THREE.Mesh(FXG.puff, new THREE.MeshBasicMaterial({ transparent: true })));
+    add(new THREE.Mesh(FXG.ball, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false })));
+    add(new THREE.Mesh(MODELS.geo('mRing', () => new THREE.RingGeometry(0.35, 0.55, 24).rotateX(-Math.PI / 2)),
+      new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide })));
+    add(new THREE.Sprite(new THREE.SpriteMaterial({ map: starTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
+    add(new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.textTex('100'), transparent: true, depthTest: false })));
+    world.add(g);
+    renderer.compile(scene, camera);
+    for (const r of gpuRes(g)) if (r.isTexture) renderer.initTexture(r);
+    world.remove(g);
+    // one real render builds what compile() can't: shadow-depth and sky shaders, level textures
+    camera.position.set(camX - 1.2, CAM_Y + 3.4, CAM_D);
+    camera.lookAt(camX, CAM_Y - 0.2, 0);
+    sun.position.set(camX - 12, 30, 20); sun.target.position.set(camX, 0, 0);
+    updateLevelLights(camX);
+    renderer.render(scene, camera);
+    // instanced crowds/schools get placed by their first animation tick: let their bounds be measured then
+    world.traverse(o => { if (o.isInstancedMesh) { o.boundingSphere = null; o.boundingBox = null; } });
   }
 
   function buildStatic() {
@@ -610,12 +719,12 @@
     }
   }
   function puff(x, y, color = 0xffffff) {
-    const m = new THREE.Mesh(new THREE.SphereGeometry(0.25, 10, 8), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 }));
+    const m = new THREE.Mesh(FXG.puff, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 }));
     m.position.set(x, y, 0.3);
     world.add(m);
     L.fx.push({ type: 'puff', m, t: 0, life: 0.3 });
   }
-  const FXG = { ball: new THREE.SphereGeometry(1, 8, 6) };
+  const FXG = { ball: new THREE.SphereGeometry(1, 8, 6), puff: new THREE.SphereGeometry(0.25, 10, 8), spark: new THREE.SphereGeometry(0.1, 6, 4) };
   const starTex = (() => {
     const c = document.createElement('canvas'); c.width = c.height = 64;
     const g = c.getContext('2d');
@@ -655,7 +764,7 @@
     const c = cols[Math.floor(Math.random() * cols.length)];
     for (let i = 0; i < 18; i++) {
       const a = i / 18 * Math.PI * 2;
-      const m = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 4), new THREE.MeshBasicMaterial({ color: c, transparent: true }));
+      const m = new THREE.Mesh(FXG.spark, new THREE.MeshBasicMaterial({ color: c, transparent: true }));
       m.position.set(x, y, -1);
       world.add(m);
       L.fx.push({ type: 'spark', m, vx: Math.cos(a) * 5, vy: Math.sin(a) * 5, vz: 0, t: 0, life: 1.0 });
@@ -1923,6 +2032,7 @@
     sun.position.set(cx - 12, 30, 20);
     sun.target.position.set(cx, 0, 0);
     pLight.position.set(P.x + P.w / 2, P.y + 2.5, 3);
+    updateLevelLights(cx);
   }
 
   // HUD
@@ -1944,25 +2054,60 @@
   // ============================================================
   // Main loop
   // ============================================================
-  let last = performance.now() / 1000, acc = 0;
+  let last = performance.now() / 1000, acc = 0, animDt = 0, dirty = true;
+  window.addEventListener('resize', () => { dirty = true; });
   function frame(ms) {
     requestAnimationFrame(frame);
     const now = ms / 1000;
-    const dt = Math.min(0.1, now - last);
+    let dt = Math.min(0.1, now - last);
     last = now;
+    // a 60 Hz display's timestamps jitter around DT; snap them so each refresh runs exactly one step
+    // instead of the odd 0-then-2 pattern that shows up as a hitch
+    if (Math.abs(dt - DT) < 0.002) dt = DT;
+    if (dt > 0.004) RES.minDt = Math.min(RES.minDt, dt);
     handleMeta();
+    let n = 0;
     if (!G.paused) {
       acc += dt;
-      let n = 0;
+      animDt += dt;
       while (acc >= DT && n < 6) { step(); acc -= DT; n++; }
       if (n >= 6) acc = 0;
     }
+    updateHud();
+    // the world only changes on a game step: on 120/144 Hz screens skip the refreshes in between,
+    // they would redraw the exact same image
+    if (n === 0 && !dirty) return;
+    dirty = false;
     const t = G.t;
     syncPlayer(t);
-    syncWorld(t, G.paused ? 0 : dt);
+    syncWorld(t, animDt);
+    animDt = 0;
     syncCamera(t);
-    updateHud();
     renderer.render(scene, camera);
+    adaptRes(now);
+  }
+
+  function setResLevel(lvl) { RES.lvl = lvl; applyRes(); dirty = true; }
+  function adaptRes(now) {
+    if (G.state !== 'playing' || G.paused || document.hidden) { RES.t0 = 0; return; }
+    if (!RES.t0) { RES.t0 = now; RES.frames = 0; return; }
+    RES.frames++;
+    const span = now - RES.t0;
+    if (span < 2) return;
+    const fps = RES.frames / span;
+    RES.t0 = now; RES.frames = 0;
+    // what the display allows (a 50 Hz screen never reaches 60)
+    const target = Math.min(60, 1 / RES.minDt);
+    const c = RES.check; RES.check = null;
+    if (c && c.down && fps < c.fps + 3) { setResLevel(RES.lvl - 1); RES.hold = now + 120; return; }   // didn't help: not the GPU
+    if (c && !c.down && fps < target * 0.9) { setResLevel(RES.lvl + 1); RES.holdLen *= 2; RES.hold = now + RES.holdLen; return; }
+    if (now < RES.hold) return;
+    if (fps < target * 0.87 && RES.lvl < RES.steps.length - 1) {
+      RES.good = 0; RES.check = { down: true, fps }; setResLevel(RES.lvl + 1);
+    } else if (fps > target * 0.97 && RES.lvl > 0) {
+      RES.good += span;
+      if (RES.good >= 10) { RES.good = 0; RES.check = { down: false }; setResLevel(RES.lvl - 1); }
+    } else RES.good = 0;
   }
 
   // debug hook for automated testing
