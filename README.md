@@ -31,6 +31,7 @@ You can also open `index.html` directly. three.js and the font load from a CDN, 
 | Level select        | L                         |
 | Pause               | P / Esc                   |
 | Mute                | M                         |
+| Show/hide FPS       | F                         |
 
 On phones and tablets, on-screen touch buttons appear automatically.
 
@@ -49,6 +50,7 @@ On phones and tablets, on-screen touch buttons appear automatically.
 - Real-time 3D rendering with procedurally generated models and textures. The game ships no image or model files.
 - Chiptune music and sound effects synthesized live with the Web Audio API.
 - Power-ups: Super Mushroom, Fire Flower, Starman and 1-Ups.
+- Six hidden bonus rooms full of coins: find the right pipe and press ↓ to go down it.
 - Physics that change from world to world: ice, water, low gravity, wind and bouncy jelly.
 - A level-select menu, a saved top score, and touch controls.
 

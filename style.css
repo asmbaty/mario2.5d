@@ -10,6 +10,8 @@ body { font-family: 'Press Start 2P', monospace; color: #fff; user-select: none;
   text-shadow: 2px 2px 0 #000, -1px -1px 0 #000; pointer-events: none; z-index: 5;
 }
 #hud .col { text-align: center; min-width: 4em; }
+#fps { position: fixed; top: 4px; left: 6px; font-size: 9px; color: #b8ffb0; text-shadow: 1px 1px 0 #000; pointer-events: none; z-index: 6; opacity: .85; }
+#fps.hide { display: none; }
 .coin-ico { display: inline-block; width: .7em; height: 1em; background: #f8c800; border-radius: 45%; box-shadow: inset -2px 0 0 #b07000; vertical-align: -2px; margin-right: 3px; animation: coinflash 1s infinite; }
 @keyframes coinflash { 50% { background: #fff0a0; } }
 

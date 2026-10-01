@@ -260,7 +260,7 @@ const DECOR = (() => {
         const flame = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.6, 8), M().mat(0xffa030, { emissive: 0xff6010, emissiveIntensity: 2 }));
         flame.position.set(x, 7, -2.2);
         world.add(flame);
-        ctx.anim(() => { flame.scale.y = 0.85 + Math.random() * 0.35; });
+        ctx.anim(t => { flame.scale.y = 1.02 + (Math.sin(t * 5.3 + x) * 0.6 + Math.sin(t * 8.7 + x * 1.9) * 0.4) * 0.14; flame.rotation.z = Math.sin(t * 3.1 + x) * 0.08; });
       }
     },
   };

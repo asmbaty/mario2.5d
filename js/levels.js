@@ -4,7 +4,8 @@
 // 'C' multi-coin brick, 'U' used block, 'X' hard block, 'P' pipe, 'T' treetop platform,
 // 'K' bullet-bill cannon, 'R' bridge (collapses when the axe is touched),
 // 'J' jelly spring block (bounces Mario high), 'D' crumbling block (falls shortly after being stood on),
-// 'A' dash panel (set into the ground; launches Mario forward at super speed).
+// 'A' dash panel (set into the ground; launches Mario forward at super speed),
+// 'H' sideways exit pipe of a bonus room (solid, drawn separately).
 const LEVEL_H = 15;
 
 class LevelBuilder {
@@ -19,6 +20,7 @@ class LevelBuilder {
     this.enemies = []; this.coins = []; this.lifts = [];
     this.start = { x: 3, y: 2 }; this.mid = null;
     this.flagX = null; this.castleX = null;
+    this.warps = []; this.exitPipe = null;
   }
   set(x, y, c) { if (x >= 0 && x < this.w && y >= 0 && y < this.h) this.grid[y][x] = c; }
   fill(x0, x1, y0, y1, c) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) this.set(x, y, c); return this; }
@@ -32,6 +34,8 @@ class LevelBuilder {
   }
   coinRow(x, y, n) { for (let i = 0; i < n; i++) this.coins.push({ x: x + i, y }); return this; }
   pipe(x, h, plant) { if (plant) this.piranhas.push({ x, top: 2 + h }); return this.fill(x, x + 1, 2, 2 + h - 1, 'P'); }
+  // enterable pipe: duck on it to drop into bonus room `room`; Mario comes back up out of the pipe at exitX
+  warp(x, h, room, exitX) { this.warps.push({ x, top: 2 + h, room, exitX }); return this.pipe(x, h); }
   cannon(x, h) { this.cannons.push({ x, y: 2 + h - 1 }); return this.fill(x, x, 2, 2 + h - 1, 'K'); }
   firebar(x, y, len, speed) { this.set(x, y, 'X'); this.firebars.push({ x, y, len, speed }); return this; }
   podoboo(x) { this.podoboos.push({ x }); return this; }
@@ -62,7 +66,7 @@ const LEVELS = [
       b.blocks(16, 5, '?');
       b.blocks(20, 5, 'BMB?B').blocks(22, 9, '?');
       b.enemy('goomba', 22);
-      b.pipe(28, 2).pipe(38, 3).pipe(46, 4).pipe(57, 4);
+      b.pipe(28, 2).pipe(38, 3).pipe(46, 4).warp(57, 4, 0, 163);
       b.enemy('goomba', 41).enemy('goomba', 51).enemy('goomba', 53);
       b.coinRow(31, 6, 3).coinRow(49, 8, 3);
       b.blocks(64, 6, 'L');
@@ -110,7 +114,7 @@ const LEVELS = [
       b.enemy('goomba', 56, 8).enemy('goomba', 58, 8);
       b.coinRow(55, 10, 6);
       b.blocks(64, 5, 'B?B?');
-      b.pipe(70, 3).pipe(76, 2);
+      b.warp(70, 3, 1, 100).pipe(76, 2);
       b.enemy('goomba', 73);
       b.coinRow(80, 6, 4);
       b.enemy('koopa', 88).enemy('goomba', 92).enemy('goomba', 94);
@@ -176,11 +180,11 @@ const LEVELS = [
       b.stairsUp(46, 3);
       b.blocks(52, 6, 'B?B?B');
       b.enemy('goomba', 55).enemy('goomba', 56.5);
-      b.pipe(62, 4, true);
+      b.warp(62, 4, 2, 98);
       b.coinRow(71, 7, 4);
       b.blocks(78, 5, 'BBBBBB').blocks(79, 9, '?L?');
       b.enemy('red', 84).enemy('koopa', 88);
-      b.pipe(92, 2, true).pipe(98, 3, true);
+      b.pipe(92, 2, true).pipe(98, 3);
       b.blocks(103, 5, 'C');
       b.enemy('goomba', 105).enemy('goomba', 106.5);
       b.coinRow(111, 6, 3);
@@ -277,7 +281,7 @@ const LEVELS = [
       b.enemy('boo', 56, 10);
       b.blocks(58, 5, '?B?B?').blocks(60, 9, 'M');
       b.enemy('goomba', 64).enemy('goomba', 65.5).enemy('red', 70);
-      b.pipe(74, 4, true);
+      b.warp(74, 4, 3, 140);
       b.coinRow(84, 5, 3);
       b.enemy('boo', 90, 6);
       b.blocks(94, 6, 'BCB');
@@ -286,7 +290,7 @@ const LEVELS = [
       b.enemy('koopa', 115).enemy('goomba', 118).enemy('goomba', 119.5);
       b.blocks(122, 5, 'B?B');
       b.platform(131, 5, 4);
-      b.pipe(140, 2, true);
+      b.pipe(140, 2);
       b.enemy('boo', 146, 7);
       b.blocks(150, 5, '???');
       b.enemy('goomba', 154).enemy('goomba', 155.5);
@@ -379,12 +383,12 @@ const LEVELS = [
       b.blocks(24, 2, 'J');
       b.fill(26, 31, 10, 10, 'X').coinRow(26, 11, 6).enemy('red', 29, 11);
       b.coinRow(33, 6, 3);
-      b.pipe(38, 2);
+      b.warp(38, 2, 4, 62);
       b.enemy('koopa', 41);
       b.coinRow(45, 6, 3);
       b.blocks(52, 5, 'BBBB').blocks(53, 9, '?M?');
       b.enemy('goomba', 56).enemy('goomba', 57.5);
-      b.pipe(62, 3, true);
+      b.pipe(62, 3);
       b.blocks(68, 2, 'J');
       b.fill(70, 76, 10, 10, 'B').coinRow(70, 11, 7).enemy('red', 73, 11);
       b.blocks(78, 2, 'J').coinRow(81, 9, 4);
@@ -523,7 +527,7 @@ const LEVELS = [
       b.enemy('spiny', 30);
       b.blocks(44, 6, 'B?B?B');
       b.enemy('koopa', 50).enemy('spiny', 56);
-      b.pipe(60, 3, true);
+      b.warp(60, 3, 5, 164);
       b.firebar(78, 5, 4, 1.6);
       b.enemy('goomba', 84).enemy('goomba', 85.5);
       b.blocks(88, 5, 'BMB');
@@ -534,7 +538,7 @@ const LEVELS = [
       b.firebar(146, 5, 5, -1.5);
       b.blocks(150, 9, 'B?B');
       b.enemy('koopa', 154).enemy('goomba', 160).enemy('goomba', 161.5);
-      b.pipe(164, 2, true);
+      b.pipe(164, 2);
       b.stairsUp(178, 8).column(186, 8);
       b.flag(192).castle(196);
       b.mid = 106;
@@ -577,4 +581,53 @@ const LEVELS = [
   },
 ];
 
-if (typeof module !== 'undefined') module.exports = { LEVELS, LevelBuilder, LEVEL_H };
+// ======================= BONUS ROOMS =======================
+// Hidden coin rooms reached through warp pipes. Mario drops in from the ceiling and leaves through the
+// sideways pipe on the right, which brings him back up out of the level's exit pipe.
+function bonusRoom(w) {
+  const b = new LevelBuilder(w, 'under', 'bonus');
+  b.ground(0, w - 1).fill(0, 0, 2, 12, 'X').fill(0, w - 1, 13, 14, 'X');
+  b.fill(w - 4, w - 1, 2, 3, 'H').fill(w - 2, w - 1, 4, 12, 'H');
+  b.exitPipe = { x: w - 4, y: 2 };
+  b.start = { x: 2, y: 10 };
+  return b;
+}
+const BONUS_ROOMS = [
+  // 1-1: brick vault topped with a pyramid of coins
+  () => bonusRoom(26).fill(5, 17, 2, 3, 'B').coinRow(5, 5, 13).coinRow(6, 7, 11).coinRow(7, 9, 9),
+  // 1-2: coin staircase up to a shelf with a multi-coin brick above it
+  () => {
+    const b = bonusRoom(26).stairsUp(4, 5);
+    for (let i = 0; i < 5; i++) b.coinRow(4 + i, 3 + i, 1).coinRow(4 + i, 4 + i, 1);
+    b.fill(9, 15, 6, 6, 'X').coinRow(9, 7, 7).coinRow(9, 8, 7).coinRow(9, 3, 7);
+    return b.blocks(12, 10, 'C');
+  },
+  // 2-1: a big coin diamond, reached with jelly springs
+  () => {
+    const b = bonusRoom(26).blocks(5, 2, 'J').blocks(17, 2, 'J');
+    for (let r = 0; r < 7; r++) { const n = 7 - 2 * Math.abs(r - 3); b.coinRow(11 - (n >> 1), 4 + r, n); }
+    return b;
+  },
+  // 3-1: floating shelves with multi-coin bricks tucked beneath
+  () => bonusRoom(26)
+    .fill(4, 8, 5, 5, 'X').coinRow(4, 6, 5)
+    .fill(10, 14, 8, 8, 'X').coinRow(10, 9, 5).coinRow(10, 10, 5)
+    .fill(16, 20, 5, 5, 'X').coinRow(16, 6, 5)
+    .blocks(12, 4, 'C').coinRow(9, 3, 7),
+  // 4-1: two braided waves of coins with springs to reach the crests
+  () => {
+    const b = bonusRoom(28).blocks(8, 2, 'J').blocks(17, 2, 'J');
+    const seen = new Set();
+    for (let x = 3; x <= 22; x++) for (const s of [1, -1]) {
+      const y = Math.round(7.5 + s * 3 * Math.sin((x - 3) / 3));
+      if (!seen.has(x + ',' + y)) { seen.add(x + ',' + y); b.coinRow(x, y, 1); }
+    }
+    return b;
+  },
+  // 5-2: treasure vault packed with coins, bonus blocks overhead
+  () => bonusRoom(26).column(6, 3).column(17, 3)
+    .coinRow(8, 3, 8).coinRow(8, 4, 8).coinRow(8, 5, 8)
+    .blocks(10, 8, 'C??C'),
+];
+
+if (typeof module !== 'undefined') module.exports = { LEVELS, LevelBuilder, LEVEL_H, BONUS_ROOMS };

@@ -199,6 +199,9 @@
   function applyTheme(th) {
     scene.background = TEX.gradient(th.bg);
     scene.fog = new THREE.Fog(th.fog, th.fogNear || 38, th.fogFar || 110);
+    applyLights(th);
+  }
+  function applyLights(th) {
     hemi.color.setHex(th.hemi[0]); hemi.groundColor.setHex(th.hemi[1]); hemi.intensity = th.hemi[2];
     sun.color.setHex(th.sun[0]); sun.intensity = th.sun[1];
     pLight.intensity = th.point;
@@ -206,14 +209,15 @@
     pLight.color.setHex(th.pointColor || 0xffc890);
   }
 
-  function loadLevel(idx, fromMid) {
+  // `room`: a bonus-room def to load in place of the level; the level itself is kept aside in G.stash
+  function loadLevel(idx, fromMid, room) {
     $('toast').classList.remove('show');
     G.bcPhase = null; G.flagPhase = null; G.flash = 0; G.shake = 0;
     const oldWorld = world, oldBg = scene.background;
     scene.remove(world);
     world = new THREE.Group();
     scene.add(world);
-    const def = LEVELS[idx].build();
+    const def = room || LEVELS[idx].build();
     const th = THEMES[def.theme];
     const T = TEX.mats(def.theme);
     L = {
@@ -282,17 +286,21 @@
       while (y < L.h && solidAt(sx, y)) y++;
       sy = y;
     }
-    Object.assign(P, { z: 0, x: sx, y: sy, vx: 0, vy: 0, dir: 1, onGround: false, inv: 0, star: 0, combo: 0, riding: null, hidden: false, dieJumped: false, skid: false, duck: false, boost: 0 });
+    Object.assign(P, { z: 0, x: sx, y: sy, vx: 0, vy: 0, dir: 1, onGround: false, inv: room ? P.inv : 0, star: room ? P.star : 0, combo: 0, riding: null, hidden: false, dieJumped: false, skid: false, duck: false, boost: 0 });
     P.h = P.size > 0 ? BIG_H : SMALL_H;
     P.model.setPalette(P.size === 2 ? 'fire' : 'normal');
     P.model.root.visible = true;
     P.model.body.rotation.set(0, 1.1, 0);
     camX = Math.max(halfW, P.x);
     clampCam();
-    G.time = def.time || 400; G.timeAcc = 0; G.hurried = false; G.freeze = 0;
-    G.windT = 0; DECOR.gust = 0; L.meteorT = 3;
+    if (!room) { G.time = def.time || 400; G.timeAcc = 0; G.hurried = false; }
+    G.freeze = 0; G.windT = 0; DECOR.gust = 0; L.meteorT = 3;
     setupLevelLights();
-    releaseOld(oldWorld, oldBg);
+    if (!room) {
+      // a level left behind for a bonus room (e.g. Mario ran out of time down there) goes too
+      if (G.stash) { releaseOld(G.stash.world, G.stash.bg); G.stash = null; }
+      releaseOld(oldWorld, oldBg);
+    }
     warmShaders();
   }
 
@@ -347,7 +355,7 @@
     const lists = { grass: [], dirt: [], hard: [], tree: [] };
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const c = grid[y][x];
-      if (c === ' ') continue;
+      if (c === ' ' || c === 'H') continue;
       if (c === '#') {
         const above = y + 1 < h ? grid[y + 1][x] : ' ';
         (above === '#' ? lists.dirt : lists.grass).push([x, y]);
@@ -442,6 +450,19 @@
         } else x++;
       }
     }
+    // bonus room exit: a pipe lying on its side (mouth facing left) that bends up into the ceiling
+    const ep = L.def.exitPipe;
+    if (ep) {
+      const len = w - ep.x;
+      const side = MODELS.pipe(len);
+      side.rotation.z = Math.PI / 2;
+      side.position.set(w, ep.y + 1, 0);
+      world.add(side);
+      const up = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 0.88, h - ep.y - 1, 24), side.children[0].material);
+      up.position.set(w - 1, (h + ep.y + 1) / 2, 0);
+      up.receiveShadow = true;
+      world.add(up);
+    }
     // flag + castle
     if (L.flagX != null) {
       const f = MODELS.flagpole(9.5);
@@ -533,7 +554,7 @@
         const flame = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.5, 8), MODELS.mat(0xffa030, { emissive: 0xff6010, emissiveIntensity: 2 }));
         flame.position.set(x, 8, -2.7);
         world.add(flame);
-        L.clouds.push({ m: flame, flicker: true, light: torch, base: 6 });
+        L.clouds.push({ m: flame, flicker: true, light: torch, base: 6, ph: x * 1.37 });
       }
     } else if (theme === 'sky') {
       const sunM = new THREE.Mesh(new THREE.SphereGeometry(12, 24, 16), new THREE.MeshBasicMaterial({ color: 0xffd080, fog: false }));
@@ -618,7 +639,9 @@
         base.vx = -2.5; base.vy = -10; base.active = true;
         break;
       case 'bowser':
-        e = { kind, x, y, w: 1.7, h: 2.1, m: MODELS.bowser(), boss: true, starproof: true, hp: 5, homeX: x, fireT: 2.5, jumpT: 3, hurtT: 0 };
+        // 1.5x the model: too tall to hop over casually, low enough to clear with a well-timed full jump
+        e = { kind, x, y, w: 2.55, h: 3.15, m: MODELS.bowser(), boss: true, starproof: true, hp: 5, homeX: x, fireT: 2.5, jumpT: 3, jumpCd: 0, hurtT: 0 };
+        e.m.root.scale.setScalar(1.5);
         base.vx = -1;
         break;
     }
@@ -931,6 +954,7 @@
     if (ph.water) {
       if (pressed.jump) {
         p.vy = 6.2; p.onGround = false; p.riding = null; p.swimT = 0.35;
+        dust(p.x + p.w / 2 - p.dir * 0.2, p.y + p.h * 0.6, 3, 0.35, 2.4, 0xe0f8ff);
         SFX.fx.swim();
       }
       p.vy = Math.max(-4, p.vy - 13 * DT);
@@ -1177,18 +1201,31 @@
     }
     e.dir = pc < bc ? -1 : 1;
     if (e.x < e.homeX - 3.5) e.vx = 1.1; else if (e.x > e.homeX + 1) e.vx = -1.1;
+    else if (!e.vx) e.vx = -1.1;
     e.jumpT -= DT;
-    if (e.jumpT <= 0 && e.onGround) { e.vy = 11; e.jumpT = 2.2 + Math.random() * 2.5; }
-    e.vy = Math.max(-MAX_FALL, e.vy - 40 * DT);
+    if (e.onGround) e.jumpCd = Math.max(0, e.jumpCd - DT);
+    // Mario leaping at him: a tall, floaty jump straight up to block. Once he lands he needs a moment to
+    // recover, so the ways past are to bait the jump and run underneath while he's up, to make a running
+    // leap over him right after he lands, or to use fireballs
+    const gap = Math.abs(pc - bc) - e.w / 2, closing = P.vx * (bc - pc) > 1;
+    if (e.onGround && e.jumpCd <= 0 && !P.onGround && closing && P.y > e.y + 0.3 && gap < 1.2 + Math.abs(P.vx) * 0.3) {
+      e.vy = 16; e.block = true; e.jumpCd = 1.6; e.jumpT = Math.max(e.jumpT, 2);
+    } else if (e.jumpT <= 0 && e.onGround) { e.vy = 12; e.jumpCd = 0.6; e.jumpT = 2.2 + Math.random() * 2.5; }
+    e.vy = Math.max(-MAX_FALL, e.vy - (e.block && e.vy > 0 ? 26 : 40) * DT);
     const pvx = e.vx, wasG = e.onGround, fallV = e.vy;
+    if (e.block) e.vx = 0;
     const r = moveBody(e);
-    if (r.hitX) e.vx = -pvx;
-    if (e.onGround && !wasG && fallV < -6) { shake(0.35); dust(e.x + e.w / 2, e.y, 8, 2, 0.5); SFX.fx.bump(); }
+    if (e.block) e.vx = pvx;
+    else if (r.hitX) e.vx = -pvx;
+    if (e.onGround && !wasG) {
+      e.block = false;
+      if (fallV < -6) { shake(0.35); dust(e.x + e.w / 2, e.y, 8, 2, 0.5); SFX.fx.bump(); }
+    }
     if (Math.abs(pc - bc) < halfW + 1 && G.state === 'playing') {
       e.fireT -= DT;
       if (e.fireT <= 0) {
         e.fireT = 2 + Math.random() * 1.8;
-        const f = spawnEnemy('flame', e.dir < 0 ? e.x - 1.1 : e.x + e.w, e.y + 1.5);
+        const f = spawnEnemy('flame', e.dir < 0 ? e.x - 1.1 : e.x + e.w, e.y + 2.25);
         f.active = true; f.vx = e.dir * 6; f.dir = e.dir;
         f.targetY = Math.min(6, Math.max(2.25, P.y + (Math.random() < 0.5 ? 0.2 : 1.1)));
         e.mouthT = 0.5;
@@ -1692,6 +1729,73 @@
     $('toast').classList.add('show');
   }
 
+  // ---------------- warp pipes & bonus rooms ----------------
+  function checkPipes() {
+    if (!P.onGround || P.riding) return false;
+    const cx = P.x + P.w / 2;
+    if (keys.down) for (const w of L.def.warps || []) {
+      if (Math.abs(P.y - w.top) < 0.05 && cx > w.x + 0.45 && cx < w.x + 1.55) { startPipe('down', w); return true; }
+    }
+    const ep = L.def.exitPipe;
+    if (ep && keys.right && Math.abs(P.y - ep.y) < 0.05 && P.x + P.w >= ep.x - 0.08) { startPipe('side', null); return true; }
+    return false;
+  }
+  function startPipe(phase, warp) {
+    G.state = 'pipe';
+    G.pipe = { phase, warp: warp || (G.stash && G.stash.warp), t: 0 };
+    P.vx = 0; P.vy = 0; P.duck = false; P.skid = false; P.boost = 0;
+    if (P.size > 0) P.h = BIG_H;
+    if (phase === 'down') P.x = warp.x + 1 - P.w / 2;
+    SFX.fx.pipe();
+  }
+  function updatePipe() {
+    const pp = G.pipe;
+    pp.t += DT;
+    if (pp.phase === 'down') {
+      P.y = Math.max(pp.warp.top - P.h - 0.2, P.y - 2.4 * DT);
+      if (pp.t > 1 && !pp.go) { pp.go = true; irisTo(enterRoom); }
+    } else if (pp.phase === 'side') {
+      P.x += 2.2 * DT; P.dir = 1; P.anim += 2.2 * DT * 1.7;
+      if (pp.t > 1 && !pp.go) { pp.go = true; irisTo(exitRoom); }
+    } else if (pp.phase === 'up') {
+      P.y = Math.min(pp.top, P.y + 2.4 * DT);
+      if (P.y >= pp.top && pp.t > 0.3) { G.state = 'playing'; P.onGround = true; }
+    }
+    updateFx(); sweep(L.fx, f => f.m);
+  }
+  function enterRoom() {
+    const w = G.pipe.warp;
+    const main = { L, world, bg: scene.background, fog: scene.fog, warp: w };
+    loadLevel(L.idx, false, BONUS_ROOMS[w.room]());
+    G.stash = main;
+    camSmoothX = null;
+    const el = $('iris'); el.className = ''; void el.offsetWidth; el.className = 'open';
+    G.state = 'playing';
+    SFX.Music.play(P.star > 0 ? 'star' : L.th.music);
+  }
+  function exitRoom() {
+    const s = G.stash, w = s.warp;
+    G.stash = null;
+    const roomWorld = world, roomBg = scene.background;
+    scene.remove(world);
+    world = s.world; L = s.L;
+    scene.add(world);
+    scene.background = s.bg; scene.fog = s.fog;
+    applyLights(L.th);
+    releaseOld(roomWorld, roomBg);
+    // come up out of the exit pipe
+    let top = 2; while (top < L.h && L.grid[top][w.exitX] === 'P') top++;
+    world.add(P.model.root);
+    Object.assign(P, { x: w.exitX + 1 - P.w / 2, y: top - P.h - 0.2, vx: 0, vy: 0, dir: 1, onGround: true, riding: null, z: 0, hidden: false });
+    camX = Math.max(camX, P.x + P.w / 2 + 1); clampCam();
+    camSmoothX = null;
+    setupLevelLights();
+    G.state = 'pipe'; G.pipe = { phase: 'up', t: 0, top };
+    const el = $('iris'); el.className = ''; void el.offsetWidth; el.className = 'open';
+    SFX.fx.pipe();
+    SFX.Music.play(P.star > 0 ? 'star' : L.th.music);
+  }
+
   function updatePlaying() {
     if (G.freeze > 0) {
       G.freeze -= DT;
@@ -1733,6 +1837,7 @@
     if (P.y < -2.5) { die(); return; }
     if (L.th.lava && P.y < 1.05) { puff(P.x + P.w / 2, 1.3, 0xff6020); SFX.fx.burn(); die(); return; }
     if (L.axe && overlap(P, L.axe)) { startBossClear(); return; }
+    if (checkPipes()) return;
     if (L.def.mid != null && P.x > L.def.mid) { G.reachedMid = true; G.midLevel = L.idx; }
     if (L.flagX != null && P.x + P.w >= L.flagX - 0.02 && P.y < 13) { startFlag(); return; }
     updateCamera();
@@ -1751,6 +1856,7 @@
         break;
       case 'playing': updatePlaying(); break;
       case 'dying': updateDying(); break;
+      case 'pipe': updatePipe(); break;
       case 'flag': updateFlag(); break;
       case 'bossclear': updateBossClear(); break;
       case 'gameover':
@@ -1820,30 +1926,42 @@
     pm.eyes.forEach(e => { e.scale.y = blink ? 0.12 : 1; });
     pm.head.rotation.y += ((idle ? Math.sin(t * 0.6) * 0.45 : 0) - pm.head.rotation.y) * 0.08;
     pm.head.rotation.x = idle ? Math.sin(t * 3) * 0.03 : 0;
-    const runLean = P.onGround && G.state === 'playing' ? Math.min(0.22, Math.abs(P.vx) / 45) : 0;
-    pm.inner.rotation.x += (runLean - pm.inner.rotation.x) * 0.2;
+    const swimming = !P.onGround && G.state === 'playing' && L.phys.water;
+    // swimming: lie forward into the stroke, more so the faster Mario glides; tread water upright-ish when still
+    const runLean = swimming ? 0.3 + Math.min(1, Math.abs(P.vx) / 4) * 0.55 - Math.max(0, P.vy) * 0.03
+      : P.onGround && G.state === 'playing' ? Math.min(0.22, Math.abs(P.vx) / 45) : 0;
+    pm.inner.rotation.x += (runLean - pm.inner.rotation.x) * (swimming ? 0.08 : 0.2);
     // facing
     let targetRot = P.dir > 0 ? 1.1 : -1.1;
-    if (G.state === 'dying') targetRot = 0;
+    if (G.state === 'dying' || (G.state === 'pipe' && G.pipe.phase !== 'side')) targetRot = 0;
     if (G.state === 'flag' && G.flagPhase === 'enter') targetRot = Math.PI;
     if (G.state === 'flag' && G.flagPhase === 'slide') targetRot = 1.4;
     if (G.state === 'bossclear' && G.bcPhase === 'thanks') targetRot = 0.5;
     pm.body.rotation.y += (targetRot - pm.body.rotation.y) * 0.25;
     // limbs
     const [lL, lR] = pm.legs, [aL, aR] = pm.arms;
-    let legSwing = 0, armL = 0, armR = 0, lean = 0;
+    let legSwing = 0, armL = 0, armR = 0, lean = 0, armOut = 0, legOut = 0, kick = 0;
     if (G.state === 'dying') {
       armL = armR = Math.PI * 0.9;
     } else if (G.state === 'flag' && (G.flagPhase === 'slide' || G.flagPhase === 'hold')) {
       armL = armR = Math.PI * 0.85; legSwing = 0.3;
-    } else if (!P.onGround && G.state === 'playing' && L.phys.water) {
-      legSwing = Math.sin(t * 12) * 0.5;
+    } else if (swimming) {
+      // breaststroke: each press sweeps the arms from straight ahead out wide and back to the hips while the
+      // legs frog-kick; between strokes the arms reach forward again, sculling, and the feet flutter
       const st = Math.max(0, P.swimT || 0) / 0.35;
-      armL = armR = 0.4 + st * 2.2;
-      lean = -0.5 * P.dir;
+      if (st > 0) {
+        const k = 1 - st, pull = Math.sin(k * Math.PI);
+        armL = armR = 1.7 - 1.5 * (k * k * (3 - 2 * k));
+        armOut = pull * 1.45;
+        legOut = pull * 0.55; kick = -pull * 0.7;
+      } else {
+        armL = armR = 1.6 + Math.sin(t * 4) * 0.12;
+        armOut = 0.22 + Math.sin(t * 4) * 0.16;
+        legSwing = Math.sin(t * 9) * 0.35; legOut = 0.12;
+      }
     } else if (!P.onGround && G.state === 'playing') {
       legSwing = 0.7; armR = 2.6; armL = -0.6;
-    } else if (G.state === 'flag' && G.flagPhase === 'enter') {
+    } else if ((G.state === 'flag' && G.flagPhase === 'enter') || (G.state === 'pipe' && G.pipe.phase === 'side')) {
       legSwing = Math.sin(P.anim * 2.2) * 0.8; armL = legSwing; armR = -legSwing;
     } else if (P.skid) {
       lean = -0.25 * P.dir; legSwing = 0.4;
@@ -1853,13 +1971,17 @@
     }
     if (dk > 0.05) { legSwing *= 1 - dk; armL = armL * (1 - dk) + 0.7 * dk; armR = armR * (1 - dk) + 0.7 * dk; lean = lean * (1 - dk); }
     if (P.throwT > 0) armR = 1.8;
-    lL.rotation.x = legSwing; lR.rotation.x = -legSwing;
-    lL.rotation.z = -0.35 * dk; lR.rotation.z = 0.35 * dk;
-    aL.rotation.x = -armL; aR.rotation.x = -armR;
-    aL.rotation.z = G.state === 'dying' ? 0.4 : 0; aR.rotation.z = G.state === 'dying' ? -0.4 : 0;
+    // swim limb poses ease in and out rather than snapping between stroke and glide
+    const ez = swimming ? 0.35 : 1;
+    const ease = (o, ax, v) => { o.rotation[ax] += (v - o.rotation[ax]) * ez; };
+    ease(lL, 'x', legSwing + kick); ease(lR, 'x', -legSwing + kick);
+    ease(lL, 'z', -0.35 * dk - legOut); ease(lR, 'z', 0.35 * dk + legOut);
+    ease(aL, 'x', -armL); ease(aR, 'x', -armR);
+    ease(aL, 'z', G.state === 'dying' ? 0.4 : -armOut); ease(aR, 'z', G.state === 'dying' ? -0.4 : armOut);
     pm.body.rotation.z = lean;
     // bob
-    pm.inner.position.y = (P.onGround && Math.abs(P.vx) > 0.5) ? Math.abs(Math.sin(P.anim * 2.2)) * 0.05 : 0;
+    pm.inner.position.y = (P.onGround && Math.abs(P.vx) > 0.5) ? Math.abs(Math.sin(P.anim * 2.2)) * 0.05
+      : swimming ? Math.sin(t * 2.6) * 0.04 : 0;
     // visibility / star
     let vis = !P.hidden;
     if (P.inv > 0 && G.state === 'playing') vis = vis && Math.floor(t * 20) % 2 === 0;
@@ -1936,7 +2058,11 @@
     if (L.theme === 'speedway') { L.T.dash.map.offset.x = -t * 2; L.T.dash.emissiveIntensity = 0.6 + Math.sin(t * 10) * 0.3; }
     L.T.q.emissiveIntensity = 0.12 + (Math.sin(t * 4) * 0.5 + 0.5) * 0.3;
     for (const c of L.clouds) {
-      if (c.flicker) { c.light.intensity = c.base * (0.8 + Math.random() * 0.4); c.m.scale.y = 0.9 + Math.random() * 0.3; }
+      if (c.flicker) {
+        // smooth flicker (layered sines, own phase per torch) rather than a new random value every frame
+        const f = Math.sin(t * 5.3 + c.ph) * 0.5 + Math.sin(t * 8.7 + c.ph * 1.9) * 0.3 + Math.sin(t * 2.1 + c.ph * 0.7) * 0.2;
+        c.light.intensity = c.base * (1 + f * 0.15); c.m.scale.y = 1.05 + f * 0.12; c.m.rotation.z = Math.sin(t * 3.1 + c.ph) * 0.08;
+      }
       else { c.m.position.x += c.speed * dt; }
     }
     if (L.flag) L.flag.flag.rotation.y = Math.sin(t * 3) * 0.25;
@@ -2085,6 +2211,21 @@
     syncCamera(t);
     renderer.render(scene, camera);
     adaptRes(now);
+    countFps(now);
+  }
+
+  // frame-rate readout (top-left corner; F toggles it): drawn frames per second, refreshed twice a second
+  const FPS = { el: $('fps'), n: 0, t0: 0 };
+  try { if (localStorage.getItem('mario25d-fps') === '0') FPS.el.classList.add('hide'); } catch (e) { /* storage unavailable */ }
+  window.addEventListener('keydown', e => {
+    if (e.code !== 'KeyF' || e.repeat) return;
+    const hide = FPS.el.classList.toggle('hide');
+    try { localStorage.setItem('mario25d-fps', hide ? '0' : '1'); } catch (err) { /* ignore */ }
+  });
+  function countFps(now) {
+    FPS.n++;
+    if (!FPS.t0) FPS.t0 = now;
+    if (now - FPS.t0 >= 0.5) { FPS.el.textContent = Math.round(FPS.n / (now - FPS.t0)) + ' FPS'; FPS.n = 0; FPS.t0 = now; }
   }
 
   function setResLevel(lvl) { RES.lvl = lvl; applyRes(); dirty = true; }

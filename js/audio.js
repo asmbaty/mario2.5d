@@ -83,6 +83,7 @@ const SFX = (() => {
     meteor() { if (!ctx) return; const t = now(); tone(1800, t, 0.9, 'triangle', 0.05, 300); },
     boom() { if (!ctx) return; const t = now(); noise(t, 0.6, 0.45, sfxGain, 60); tone(80, t, 0.45, 'sawtooth', 0.2, 30); },
     dash() { if (!ctx) return; const t = now(); tone(220, t, 0.35, 'sawtooth', 0.12, 1400); tone(440, t + 0.05, 0.3, 'square', 0.06, 2200); noise(t, 0.3, 0.12, sfxGain, 2000); },
+    pipe() { if (!ctx) return; const t = now(); for (let i = 0; i < 3; i++) tone(240 - i * 30, t + i * 0.12, 0.09, 'square', 0.2, 90); },
     toad() { seq([[72, .1], [76, .1], [79, .1], [84, .25], [0, .1], [79, .1], [84, .35]], 'square', 0.14); },
   };
 
